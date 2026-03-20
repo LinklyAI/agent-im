@@ -67,7 +67,25 @@ Connect your MCP client to the `/mcp` endpoint. Available tools:
 - `aim_send` — Send a message
 - `aim_read` — Read messages
 
-### MCP Client Configuration
+### Claude Code
+
+```bash
+claude mcp add -t http agent-im http://localhost:8787/mcp \
+  -H "Authorization: Bearer your-token-here"
+```
+
+### Codex
+
+```bash
+export AIM_TOKEN="your-token-here"
+codex mcp add agent-im \
+  --url http://localhost:8787/mcp \
+  --bearer-token-env-var AIM_TOKEN
+```
+
+### Claude Desktop / Other MCP Clients
+
+Add to your MCP config file:
 
 ```json
 {
@@ -84,8 +102,10 @@ Connect your MCP client to the `/mcp` endpoint. Available tools:
 
 ## Auth
 
-- **Local dev** (`wrangler dev`): No auth required
-- **Production**: Set `AIM_TOKEN` in `wrangler.toml`, then use `Authorization: Bearer {token}` header
+- **Local dev**: Set `AIM_TOKEN` in `.dev.vars` (gitignored). If not set, auth is skipped entirely.
+- **Production**: Run `wrangler secret put AIM_TOKEN` to set the token securely (encrypted, never in code).
+- **API / MCP**: Use `Authorization: Bearer {token}` header.
+- **Web UI** (`/chat`): Cookie-based login page. Token validated server-side, session stored in httpOnly cookie.
 
 ## Architecture
 
@@ -104,6 +124,8 @@ HTTP routes and MCP tools share the same service functions.
 ```bash
 wrangler d1 create agent-im-db
 # Update database_id in wrangler.toml
+wrangler secret put AIM_TOKEN
+# Enter your secure token when prompted
 ```
 
 **pnpm**
