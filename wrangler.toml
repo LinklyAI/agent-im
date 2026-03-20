@@ -1,0 +1,17 @@
+name = "agent-im"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+AIM_TOKEN = "your-token-here"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "agent-im-db"
+database_id = "3f762aae-a7e6-4a27-9690-750aa4829d88"
+
+[[rules]]
+type = "Text"
+globs = ["**/*.html"]
+fallthrough = false
