@@ -68,7 +68,16 @@ api.post('/threads', async (c) => {
 // GET /api/threads
 api.get('/threads', async (c) => {
   try {
-    const threads = await listThreads(c.env.DB)
+    const profileId = c.req.query('profile_id')
+    if (!profileId) {
+      return c.json({ error: 'profile_id query parameter is required' }, 400)
+    }
+    const query = {
+      profile_id: profileId,
+      include_closed: c.req.query('include_closed') === 'true',
+      include_all: c.req.query('include_all') === 'true',
+    }
+    const threads = await listThreads(c.env.DB, query)
     return c.json({ threads })
   } catch (e) {
     return handleError(e)

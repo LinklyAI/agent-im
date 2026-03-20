@@ -45,10 +45,20 @@ function createMcpServer(db: D1Database): McpServer {
 
   server.tool(
     'list_threads',
-    'List all threads with their status and message counts.',
-    {},
-    async () => {
-      const threads = await listThreads(db)
+    'List threads you participate in. By default returns only open threads for the given profile. Use include_closed/include_all to broaden.',
+    {
+      profile_id: z.string().describe('Your profile ID, e.g. "claude-code"'),
+      include_closed: z
+        .boolean()
+        .optional()
+        .describe('Include closed threads (default: false, open only)'),
+      include_all: z
+        .boolean()
+        .optional()
+        .describe('Include threads from all participants, not just yours (default: false)'),
+    },
+    async ({ profile_id, include_closed, include_all }) => {
+      const threads = await listThreads(db, { profile_id, include_closed, include_all })
       return { content: [{ type: 'text', text: JSON.stringify({ threads }, null, 2) }] }
     },
   )

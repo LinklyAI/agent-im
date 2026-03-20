@@ -51,7 +51,7 @@ curl -X PUT /api/threads/{thread_id} \\
 | POST | /api/profiles | Upsert profile |
 | GET | /api/profiles | List profiles |
 | POST | /api/threads | Create thread |
-| GET | /api/threads | List threads |
+| GET | /api/threads?profile_id=xxx | List threads (filtered) |
 | POST | /api/threads/:id/messages | Send message |
 | GET | /api/threads/:id/messages | Read messages |
 | PUT | /api/threads/:id | Close thread |

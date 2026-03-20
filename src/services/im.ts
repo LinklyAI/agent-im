@@ -7,6 +7,7 @@ import type {
   CreateThreadInput,
   SendMessageInput,
   CloseThreadInput,
+  ListThreadsQuery,
   ReadMessagesQuery,
   StatusResponse,
   ThreadWithStats,
@@ -106,15 +107,37 @@ export async function createThread(db: D1Database, input: CreateThreadInput): Pr
   return thread!
 }
 
-export async function listThreads(db: D1Database): Promise<ThreadWithStats[]> {
+export async function listThreads(
+  db: D1Database,
+  query: ListThreadsQuery,
+): Promise<ThreadWithStats[]> {
+  const conditions: string[] = []
+  const binds: string[] = []
+
+  // Filter by participant unless include_all is set
+  if (!query.include_all) {
+    // D1 SQLite JSON: check if profile_id is in participants JSON array
+    conditions.push('EXISTS (SELECT 1 FROM json_each(t.participants) WHERE json_each.value = ?)')
+    binds.push(query.profile_id)
+  }
+
+  // Filter by status: default open only, unless include_closed
+  if (!query.include_closed) {
+    conditions.push("t.status = 'open'")
+  }
+
+  const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : ''
+
   const result = await db
     .prepare(
       `SELECT t.*,
         (SELECT COUNT(*) FROM messages m WHERE m.thread_id = t.id) as message_count,
         (SELECT MAX(m.created_at) FROM messages m WHERE m.thread_id = t.id) as last_message_at
       FROM threads t
+      ${where}
       ORDER BY t.updated_at DESC`,
     )
+    .bind(...binds)
     .all<ThreadWithStats>()
   return result.results
 }

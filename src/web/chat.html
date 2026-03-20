@@ -268,7 +268,8 @@ window.switchTab = switchTab
 let cachedThreads = []
 async function loadThreads() {
   try {
-    const data = await api('GET', '/api/threads')
+    const sender = document.getElementById('sender-input').value.trim() || 'kane'
+    const data = await api('GET', `/api/threads?profile_id=${encodeURIComponent(sender)}&include_closed=true&include_all=true`)
     cachedThreads = data.threads || []
     renderThreads(cachedThreads)
   } catch (e) {

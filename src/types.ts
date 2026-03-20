@@ -55,6 +55,12 @@ export interface CloseThreadInput {
   closed_by: string
 }
 
+export interface ListThreadsQuery {
+  profile_id: string
+  include_closed?: boolean
+  include_all?: boolean
+}
+
 export interface ReadMessagesQuery {
   reader: string
   since?: string
