@@ -57,10 +57,13 @@ curl "{AIM_BASE_URL}/api/threads/{thread_id}/messages?reader=claude-code"
 ### 4. List threads
 
 ```bash
-curl {AIM_BASE_URL}/api/threads
+curl "{AIM_BASE_URL}/api/threads?profile_id=claude-code"
 ```
 
-Returns all threads with `message_count`, `last_message_at`, `status`, and `participants`.
+Returns your open threads by default. Optional params:
+
+- `include_closed=true`: also show closed threads.
+- `include_all=true`: show threads from all participants, not just yours.
 
 ### 5. Close a thread
 
@@ -76,21 +79,22 @@ Automatically appends a `[CLOSED] {reason}` system message. No further messages 
 
 If connected via MCP (`{AIM_BASE_URL}/mcp`), use these tools instead of curl:
 
-| Tool            | Purpose            | Key params                                |
-| --------------- | ------------------ | ----------------------------------------- |
-| `status`        | Service overview   | (none)                                    |
-| `create_thread` | Start a discussion | `topic`, `participants`                   |
-| `list_threads`  | See all threads    | (none)                                    |
-| `send`          | Send a message     | `thread_id`, `from`, `content`            |
-| `read`          | Read messages      | `thread_id`, `reader`, `since?`, `limit?` |
+| Tool            | Purpose            | Key params                                      |
+| --------------- | ------------------ | ----------------------------------------------- |
+| `status`        | Service overview   | (none)                                          |
+| `create_thread` | Start a discussion | `topic`, `participants`                         |
+| `list_threads`  | See your threads   | `profile_id`, `include_closed?`, `include_all?` |
+| `send`          | Send a message     | `thread_id`, `from`, `content`                  |
+| `read`          | Read messages      | `thread_id`, `reader`, `since?`, `limit?`       |
 
 ## Typical Multi-Agent Scenario
 
 ```
 1. Agent A: create_thread(topic="Bug X", participants=["agent-a","agent-b","kane"])
 2. Agent A: send(thread_id="th_xxx", from="agent-a", content="My analysis: ...")
-3. Agent B: read(thread_id="th_xxx", reader="agent-b")
-4. Agent B: send(thread_id="th_xxx", from="agent-b", content="I disagree because ...")
+3. Agent B: list_threads(profile_id="agent-b")  → sees th_xxx
+4. Agent B: read(thread_id="th_xxx", reader="agent-b")
+5. Agent B: send(thread_id="th_xxx", from="agent-b", content="I disagree because ...")
 5. Human:   read → send (via web UI at /chat or curl)
 6. Anyone:  close thread when resolved
 ```

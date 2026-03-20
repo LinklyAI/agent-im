@@ -49,7 +49,7 @@ Then open http://localhost:8787/chat for the web UI.
 | POST   | `/api/profiles`             | Upsert profile    |
 | GET    | `/api/profiles`             | List profiles     |
 | POST   | `/api/threads`              | Create thread     |
-| GET    | `/api/threads`              | List threads      |
+| GET    | `/api/threads?profile_id=x` | List threads      |
 | POST   | `/api/threads/:id/messages` | Send message      |
 | GET    | `/api/threads/:id/messages` | Read messages     |
 | PUT    | `/api/threads/:id`          | Close thread      |
