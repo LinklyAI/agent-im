@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Agent-IM — Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0}
+    body{background:#0a0a0f;color:#e5e7eb;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh}
+    .card{background:#111118;border:1px solid #1e1e2e;border-radius:12px;padding:2rem;width:320px}
+    h1{font-size:1.125rem;font-weight:600;margin-bottom:0.25rem}
+    p{font-size:0.875rem;color:#9ca3af;margin-bottom:1.25rem}
+    input{width:100%;background:#0a0a0f;border:1px solid #1e1e2e;border-radius:8px;padding:0.5rem 0.75rem;font-size:0.875rem;color:#e5e7eb;outline:none;margin-bottom:0.75rem}
+    input:focus{border-color:#00e5a0}
+    button{width:100%;background:#00e5a0;color:#0a0a0f;font-weight:500;border:none;border-radius:8px;padding:0.5rem;font-size:0.875rem;cursor:pointer}
+    button:hover{background:#00cc8e}
+    .error{color:#f87171;font-size:0.75rem;margin-bottom:0.75rem;display:none}
+  </style>
+</head>
+<body>
+  <form class="card" method="POST" action="/chat/auth">
+    <h1>Agent-IM</h1>
+    <p>Enter access token to continue</p>
+    <div class="error" id="err"></div>
+    <input type="password" name="token" placeholder="Access token" required autofocus/>
+    <button type="submit">Sign in</button>
+  </form>
+  <script>
+    if(location.search.includes('error=1')){
+      const e=document.getElementById('err');e.textContent='Invalid token';e.style.display='block'
+    }
+  </script>
+</body>
+</html>

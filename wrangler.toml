@@ -3,9 +3,6 @@ main = "src/index.ts"
 compatibility_date = "2024-12-01"
 compatibility_flags = ["nodejs_compat"]
 
-[vars]
-AIM_TOKEN = "your-token-here"
-
 [[d1_databases]]
 binding = "DB"
 database_name = "agent-im-db"

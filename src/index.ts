@@ -1,9 +1,11 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
+import { getCookie } from 'hono/cookie'
 import type { Env } from './types.js'
 import api from './routes/api.js'
 import mcp from './routes/mcp.js'
 import web from './routes/web.js'
+import { COOKIE_NAME } from './routes/web.js'
 import { getStatus } from './services/im.js'
 import { generateGuide } from './lib/guide.js'
 
@@ -13,35 +15,36 @@ const app = new Hono<{ Bindings: Env }>()
 app.use('/api/*', cors())
 app.use('/mcp', cors())
 
-// Auth middleware — skip for public routes
+// Auth middleware — skip for public routes, support Bearer token + cookie
 app.use('*', async (c, next) => {
   const path = c.req.path
   const method = c.req.method
 
-  // Public routes: GET /, GET /api/status, GET /chat
+  // Public routes: GET /, GET /api/status
   const isPublic =
-    (path === '/' && method === 'GET') ||
-    (path === '/api/status' && method === 'GET') ||
-    (path === '/chat' && method === 'GET')
+    (path === '/' && method === 'GET') || (path === '/api/status' && method === 'GET')
 
-  if (isPublic) return next()
+  // Chat routes handle their own cookie-based auth
+  const isChatRoute = path === '/chat' || path.startsWith('/chat/')
 
-  // If AIM_TOKEN is not set or is placeholder, skip auth (local dev mode)
+  if (isPublic || isChatRoute) return next()
+
+  // If AIM_TOKEN is not set, skip auth (local dev mode)
   const token = c.env.AIM_TOKEN
-  if (!token || token === 'your-token-here') return next()
+  if (!token) return next()
 
-  // Validate Bearer token
+  // Check Bearer token
   const authHeader = c.req.header('Authorization')
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return c.json({ error: 'Authorization required. Use Bearer token.' }, 401)
+  if (authHeader?.startsWith('Bearer ')) {
+    const bearerToken = authHeader.slice(7)
+    if (bearerToken === token) return next()
   }
 
-  const bearerToken = authHeader.slice(7)
-  if (bearerToken !== token) {
-    return c.json({ error: 'Invalid token' }, 401)
-  }
+  // Check session cookie (for requests from the Web UI)
+  const sessionCookie = getCookie(c, COOKIE_NAME)
+  if (sessionCookie === token) return next()
 
-  return next()
+  return c.json({ error: 'Authorization required. Use Bearer token.' }, 401)
 })
 
 // Mount routes
