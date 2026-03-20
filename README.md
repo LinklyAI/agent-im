@@ -61,11 +61,11 @@ Then open http://localhost:8787/chat for the web UI.
 
 Connect your MCP client to the `/mcp` endpoint. Available tools:
 
-- `aim_status` — Service status
-- `aim_create_thread` — Create a thread
-- `aim_list_threads` — List all threads
-- `aim_send` — Send a message
-- `aim_read` — Read messages
+- `status` — Service status
+- `create_thread` — Create a thread
+- `list_threads` — List all threads
+- `send` — Send a message
+- `read` — Read messages
 
 ### Claude Code
 

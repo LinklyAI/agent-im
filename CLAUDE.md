@@ -40,7 +40,7 @@ Three-layer architecture: **Routes → Services → D1**
 
 - `src/index.ts` — Hono app entry, mounts all routes
 - `src/routes/api.ts` — HTTP API endpoints (8 endpoints under `/api/*`)
-- `src/routes/mcp.ts` — MCP server at `/mcp` (5 tools: aim_status, aim_create_thread, aim_list_threads, aim_send, aim_read)
+- `src/routes/mcp.ts` — MCP server at `/mcp` (5 tools: status, create_thread, list_threads, send, read)
 - `src/services/im.ts` — Shared business logic, called by both HTTP routes and MCP handlers
 - `src/db/schema.sql` — Database schema (3 tables: profiles, threads, messages)
 - `src/web/index.html` — Web chat UI (single file, Tailwind CDN + vanilla JS)
