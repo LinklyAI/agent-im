@@ -37,6 +37,12 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #1e1e2e; border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: #2e2e3e; }
+    .msg-card { position: relative; }
+    .msg-card .msg-content { max-height: calc(1.5em * 10); overflow: hidden; }
+    .msg-card.expanded .msg-content { max-height: none; }
+    .msg-card .msg-expand { display: flex; }
+    .msg-card.expanded .msg-expand svg { transform: rotate(180deg); }
+    .msg-card.no-overflow .msg-expand { display: none; }
   </style>
 </head>
 <body class="h-screen overflow-hidden">
@@ -183,6 +189,7 @@
 // --- State ---
 let currentTab = 'threads'
 let currentThreadId = null
+const expandedMsgIds = new Set()
 let pollingInterval = null
 let allProfiles = []
 let selectedParticipants = []
@@ -208,7 +215,9 @@ async function api(method, path, body) {
 
 function timeAgo(iso) {
   if (!iso) return ''
-  const diff = Date.now() - new Date(iso).getTime()
+  // D1 datetime('now') returns UTC without 'Z' suffix — append it
+  const ts = iso.endsWith('Z') || iso.includes('+') ? iso : iso + 'Z'
+  const diff = Date.now() - new Date(ts).getTime()
   const m = Math.floor(diff / 60000)
   if (m < 1) return 'just now'
   if (m < 60) return m + 'm ago'
@@ -256,10 +265,12 @@ function switchTab(tab) {
 window.switchTab = switchTab
 
 // --- Threads ---
+let cachedThreads = []
 async function loadThreads() {
   try {
     const data = await api('GET', '/api/threads')
-    renderThreads(data.threads || [])
+    cachedThreads = data.threads || []
+    renderThreads(cachedThreads)
   } catch (e) {
     console.error('Failed to load threads:', e)
   }
@@ -377,6 +388,8 @@ document.getElementById('pm-save').onclick = async () => {
 // --- Select thread ---
 async function selectThread(id) {
   currentThreadId = id
+  expandedMsgIds.clear()
+  window.location.hash = id
   if (currentTab !== 'threads') switchTab('threads')
 
   if (window.innerWidth < 768) {
@@ -386,30 +399,31 @@ async function selectThread(id) {
   }
 
   loadThreads()
-  await loadMessages()
+  await loadMessages(true)
 
   if (pollingInterval) clearInterval(pollingInterval)
-  pollingInterval = setInterval(loadMessages, 3000)
+  pollingInterval = setInterval(pollUpdates, 3000)
 }
 window.selectThread = selectThread
 
 document.getElementById('back-btn').onclick = () => {
   currentThreadId = null
+  window.location.hash = ''
   if (pollingInterval) clearInterval(pollingInterval)
   document.getElementById('sidebar').classList.remove('max-md:hidden')
   document.getElementById('message-panel').classList.add('max-md:hidden')
 }
 
 // --- Messages ---
-async function loadMessages() {
+async function loadMessages(forceScroll = false) {
   if (!currentThreadId) return
   const sender = document.getElementById('sender-input').value.trim() || 'anon'
   try {
     const data = await api('GET', `/api/threads/${currentThreadId}/messages?reader=${encodeURIComponent(sender)}&limit=50`)
-    renderMessages(data)
+    renderMessages(data, forceScroll)
 
-    const threadsData = await api('GET', '/api/threads')
-    const thread = (threadsData.threads || []).find(t => t.id === currentThreadId)
+    // Use cached threads to update header (avoid extra API call)
+    const thread = cachedThreads.find(t => t.id === currentThreadId)
     if (thread) {
       const participants = JSON.parse(thread.participants)
       document.getElementById('msg-topic').textContent = thread.topic
@@ -428,7 +442,7 @@ async function loadMessages() {
   }
 }
 
-function renderMessages(data) {
+function renderMessages(data, forceScroll = false) {
   const container = document.getElementById('messages')
   const msgs = data.messages || []
   if (!msgs.length) {
@@ -436,7 +450,7 @@ function renderMessages(data) {
     return
   }
 
-  const shouldScroll = container.scrollTop + container.clientHeight >= container.scrollHeight - 50
+  const shouldScroll = forceScroll || container.scrollTop + container.clientHeight >= container.scrollHeight - 50
 
   container.innerHTML = msgs.map(m => {
     const color = senderColor(m.sender)
@@ -454,14 +468,40 @@ function renderMessages(data) {
               <span class="text-xs text-muted">${timeAgo(m.created_at)}</span>
               <span class="text-xs text-muted/50" title="Read by: ${readBy.join(', ')}">${readBy.length > 1 ? '✓✓' : '✓'}</span>
             </div>
-            <div class="bg-panel border border-border rounded-lg px-3 py-2 text-sm whitespace-pre-wrap">${escapeHtml(m.content)}</div>
+            <div class="bg-panel border border-border rounded-lg text-sm msg-card ${expandedMsgIds.has(m.id) ? 'expanded' : ''}" data-msg-id="${m.id}">
+              <div class="msg-content px-3 py-2 whitespace-pre-wrap">${escapeHtml(m.content)}</div>
+              <button class="msg-expand items-center justify-center w-full py-1 text-muted hover:text-text-secondary transition-colors" onclick="toggleMsg('${m.id}')">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
           </div>`
       }
     </div>`
   }).join('')
 
+  // Mark cards that don't overflow — hide their expand button
+  container.querySelectorAll('.msg-card').forEach(card => {
+    if (card.classList.contains('expanded')) return
+    const content = card.querySelector('.msg-content')
+    if (content.scrollHeight <= content.clientHeight) {
+      card.classList.add('no-overflow')
+    }
+  })
+
   if (shouldScroll) container.scrollTop = container.scrollHeight
 }
+
+function toggleMsg(id) {
+  const card = document.querySelector(`.msg-card[data-msg-id="${id}"]`)
+  if (!card) return
+  card.classList.toggle('expanded')
+  if (card.classList.contains('expanded')) {
+    expandedMsgIds.add(id)
+  } else {
+    expandedMsgIds.delete(id)
+  }
+}
+window.toggleMsg = toggleMsg
 
 // --- Send message ---
 async function sendMessage() {
@@ -633,8 +673,19 @@ document.getElementById('ct-confirm').onclick = async () => {
   }
 }
 
+// --- Polling: refresh both thread list and messages ---
+async function pollUpdates() {
+  await Promise.all([loadThreads(), loadMessages()])
+}
+
 // --- Init ---
-loadThreads()
+// Restore thread from URL hash
+const initHash = window.location.hash.slice(1)
+if (initHash) {
+  selectThread(initHash)
+} else {
+  loadThreads()
+}
 api('GET', '/api/profiles').then(data => { allProfiles = data.profiles || [] }).catch(() => {})
 </script>
 </body>
