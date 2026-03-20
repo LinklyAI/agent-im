@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent-IM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg: '#0a0a0f',
+            panel: '#111118',
+            border: '#1e1e2e',
+            accent: '#00e5a0',
+            'accent-hover': '#00cc8e',
+            muted: '#6b7280',
+            'text-primary': '#e5e7eb',
+            'text-secondary': '#9ca3af',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['IBM Plex Mono', 'monospace'],
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body { background: #0a0a0f; color: #e5e7eb; font-family: 'Inter', sans-serif; margin: 0; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #1e1e2e; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #2e2e3e; }
+  </style>
+</head>
+<body class="h-screen overflow-hidden">
+
+  <!-- Auth Modal -->
+  <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden">
+    <div class="bg-panel border border-border rounded-lg p-6 w-80 shadow-2xl">
+      <h2 class="text-lg font-semibold mb-1">Agent-IM</h2>
+      <p class="text-sm text-text-secondary mb-4">Enter token to connect (leave empty for local dev)</p>
+      <input id="auth-token-input" type="password" placeholder="Bearer token"
+        class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent mb-3" />
+      <button id="auth-submit" class="w-full bg-accent text-bg font-medium rounded-lg py-2 text-sm hover:bg-accent-hover transition-colors">
+        Connect
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Layout -->
+  <div id="app" class="h-screen flex">
+
+    <!-- Thread List (left panel) -->
+    <div id="thread-panel" class="w-80 min-w-[320px] border-r border-border flex flex-col bg-panel max-md:w-full max-md:min-w-0">
+      <div class="p-4 border-b border-border flex items-center justify-between">
+        <h1 class="text-base font-semibold">Threads</h1>
+        <button id="new-thread-btn" class="text-xs bg-accent text-bg px-3 py-1 rounded-md font-medium hover:bg-accent-hover transition-colors">
+          + New
+        </button>
+      </div>
+      <div id="thread-list" class="flex-1 overflow-y-auto"></div>
+    </div>
+
+    <!-- Message Panel (right) -->
+    <div id="message-panel" class="flex-1 flex flex-col bg-bg max-md:hidden">
+      <!-- Thread Header -->
+      <div id="msg-header" class="p-4 border-b border-border flex items-center gap-3">
+        <button id="back-btn" class="hidden max-md:block text-text-secondary hover:text-text-primary text-sm">
+          ← Back
+        </button>
+        <div>
+          <div id="msg-topic" class="font-semibold text-sm">Select a thread</div>
+          <div id="msg-participants" class="text-xs text-muted font-mono"></div>
+        </div>
+        <div class="ml-auto flex items-center gap-2">
+          <span id="msg-status-badge" class="text-xs px-2 py-0.5 rounded-full border border-border hidden"></span>
+          <button id="close-thread-btn" class="text-xs text-muted hover:text-red-400 transition-colors hidden">
+            Close
+          </button>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div id="messages" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+
+      <!-- Input -->
+      <div id="input-area" class="p-4 border-t border-border hidden">
+        <div class="flex gap-2">
+          <input id="sender-input" type="text" placeholder="Your name" value="kane"
+            class="w-28 bg-panel border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent font-mono" />
+          <input id="message-input" type="text" placeholder="Type a message..."
+            class="flex-1 bg-panel border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent" />
+          <button id="send-btn" class="bg-accent text-bg px-4 py-2 rounded-lg text-sm font-medium hover:bg-accent-hover transition-colors">
+            Send
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Thread Modal -->
+  <div id="new-thread-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden">
+    <div class="bg-panel border border-border rounded-lg p-6 w-96 shadow-2xl">
+      <h2 class="text-lg font-semibold mb-4">New Thread</h2>
+      <input id="nt-topic" type="text" placeholder="Topic"
+        class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent mb-3" />
+      <input id="nt-participants" type="text" placeholder="Participants (comma separated)"
+        class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent mb-4 font-mono" />
+      <div class="flex gap-2 justify-end">
+        <button id="nt-cancel" class="text-sm text-muted hover:text-text-primary px-3 py-2">Cancel</button>
+        <button id="nt-create" class="bg-accent text-bg px-4 py-2 rounded-lg text-sm font-medium hover:bg-accent-hover transition-colors">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Close Thread Modal -->
+  <div id="close-thread-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden">
+    <div class="bg-panel border border-border rounded-lg p-6 w-96 shadow-2xl">
+      <h2 class="text-lg font-semibold mb-4">Close Thread</h2>
+      <input id="ct-reason" type="text" placeholder="Reason for closing"
+        class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent mb-4" />
+      <div class="flex gap-2 justify-end">
+        <button id="ct-cancel" class="text-sm text-muted hover:text-text-primary px-3 py-2">Cancel</button>
+        <button id="ct-confirm" class="bg-red-500/80 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-500 transition-colors">Close Thread</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+// --- State ---
+let token = sessionStorage.getItem('aim_token') || ''
+let currentThreadId = null
+let pollingInterval = null
+const SENDER_COLORS = ['#f97316','#a855f7','#3b82f6','#ec4899','#10b981','#eab308','#06b6d4','#f43f5e']
+
+// --- Utils ---
+function senderColor(name) {
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) | 0
+  return SENDER_COLORS[Math.abs(hash) % SENDER_COLORS.length]
+}
+
+function headers(json = false) {
+  const h = {}
+  if (token) h['Authorization'] = `Bearer ${token}`
+  if (json) h['Content-Type'] = 'application/json'
+  return h
+}
+
+async function api(method, path, body) {
+  const opts = { method, headers: headers(!!body) }
+  if (body) opts.body = JSON.stringify(body)
+  const res = await fetch(path, opts)
+  if (res.status === 401) {
+    showAuthModal()
+    throw new Error('Unauthorized')
+  }
+  return res.json()
+}
+
+function timeAgo(iso) {
+  if (!iso) return ''
+  const diff = Date.now() - new Date(iso).getTime()
+  const m = Math.floor(diff / 60000)
+  if (m < 1) return 'just now'
+  if (m < 60) return m + 'm ago'
+  const h = Math.floor(m / 60)
+  if (h < 24) return h + 'h ago'
+  return Math.floor(h / 24) + 'd ago'
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div')
+  div.textContent = str
+  return div.innerHTML
+}
+
+// --- Auth ---
+function showAuthModal() {
+  document.getElementById('auth-modal').classList.remove('hidden')
+}
+
+document.getElementById('auth-submit').onclick = () => {
+  token = document.getElementById('auth-token-input').value.trim()
+  sessionStorage.setItem('aim_token', token)
+  document.getElementById('auth-modal').classList.add('hidden')
+  loadThreads()
+}
+
+// --- Threads ---
+async function loadThreads() {
+  try {
+    const data = await api('GET', '/api/threads')
+    renderThreads(data.threads || [])
+  } catch (e) {
+    console.error('Failed to load threads:', e)
+  }
+}
+
+function renderThreads(threads) {
+  const list = document.getElementById('thread-list')
+  if (!threads.length) {
+    list.innerHTML = '<div class="p-4 text-center text-muted text-sm">No threads yet</div>'
+    return
+  }
+  list.innerHTML = threads.map(t => {
+    const participants = JSON.parse(t.participants)
+    const isActive = t.id === currentThreadId
+    const isClosed = t.status === 'closed'
+    return `<div class="p-3 mx-2 my-1 rounded-lg cursor-pointer transition-colors ${isActive ? 'bg-border/50' : 'hover:bg-border/30'}" onclick="selectThread('${t.id}')">
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-sm font-medium truncate">${escapeHtml(t.topic)}</span>
+        <span class="text-xs ${isClosed ? 'text-red-400' : 'text-accent'}">${t.status}</span>
+      </div>
+      <div class="flex items-center justify-between">
+        <span class="text-xs text-muted font-mono truncate">${participants.join(', ')}</span>
+        <span class="text-xs text-muted">${t.message_count || 0} msgs</span>
+      </div>
+      <div class="text-xs text-muted mt-1">${timeAgo(t.last_message_at || t.created_at)}</div>
+    </div>`
+  }).join('')
+}
+
+// --- Select thread ---
+async function selectThread(id) {
+  currentThreadId = id
+
+  // Mobile: show message panel
+  if (window.innerWidth < 768) {
+    document.getElementById('thread-panel').classList.add('max-md:hidden')
+    document.getElementById('message-panel').classList.remove('max-md:hidden')
+    document.getElementById('back-btn').classList.remove('hidden')
+  }
+
+  // Load thread info and messages
+  loadThreads()
+  await loadMessages()
+
+  // Start polling
+  if (pollingInterval) clearInterval(pollingInterval)
+  pollingInterval = setInterval(loadMessages, 3000)
+}
+window.selectThread = selectThread
+
+// Back button (mobile)
+document.getElementById('back-btn').onclick = () => {
+  currentThreadId = null
+  if (pollingInterval) clearInterval(pollingInterval)
+  document.getElementById('thread-panel').classList.remove('max-md:hidden')
+  document.getElementById('message-panel').classList.add('max-md:hidden')
+}
+
+// --- Messages ---
+async function loadMessages() {
+  if (!currentThreadId) return
+  const sender = document.getElementById('sender-input').value.trim() || 'anon'
+  try {
+    const data = await api('GET', `/api/threads/${currentThreadId}/messages?reader=${encodeURIComponent(sender)}&limit=50`)
+    renderMessages(data)
+
+    // Update header
+    const threadsData = await api('GET', '/api/threads')
+    const thread = (threadsData.threads || []).find(t => t.id === currentThreadId)
+    if (thread) {
+      const participants = JSON.parse(thread.participants)
+      document.getElementById('msg-topic').textContent = thread.topic
+      document.getElementById('msg-participants').textContent = participants.join(', ')
+      const badge = document.getElementById('msg-status-badge')
+      badge.textContent = thread.status
+      badge.className = `text-xs px-2 py-0.5 rounded-full border ${thread.status === 'open' ? 'border-accent text-accent' : 'border-red-400 text-red-400'}`
+      badge.classList.remove('hidden')
+
+      const closeBtn = document.getElementById('close-thread-btn')
+      if (thread.status === 'open') {
+        closeBtn.classList.remove('hidden')
+      } else {
+        closeBtn.classList.add('hidden')
+      }
+
+      // Show/hide input
+      const inputArea = document.getElementById('input-area')
+      if (thread.status === 'open') {
+        inputArea.classList.remove('hidden')
+      } else {
+        inputArea.classList.add('hidden')
+      }
+    }
+  } catch (e) {
+    console.error('Failed to load messages:', e)
+  }
+}
+
+function renderMessages(data) {
+  const container = document.getElementById('messages')
+  const msgs = data.messages || []
+  if (!msgs.length) {
+    container.innerHTML = '<div class="text-center text-muted text-sm py-8">No messages yet</div>'
+    return
+  }
+
+  const shouldScroll = container.scrollTop + container.clientHeight >= container.scrollHeight - 50
+
+  container.innerHTML = msgs.map(m => {
+    const color = senderColor(m.sender)
+    const readBy = JSON.parse(m.read_by)
+    const isClosed = m.content.startsWith('[CLOSED]')
+    return `<div class="flex flex-col ${isClosed ? 'items-center' : ''}">
+      ${isClosed
+        ? `<div class="bg-border/30 text-muted text-xs px-4 py-2 rounded-lg max-w-md text-center">
+            <span class="font-medium" style="color:${color}">${escapeHtml(m.sender)}</span> closed the thread
+            <div class="mt-1 text-text-secondary">${escapeHtml(m.content.replace('[CLOSED] ', ''))}</div>
+          </div>`
+        : `<div class="max-w-2xl">
+            <div class="flex items-baseline gap-2 mb-1">
+              <span class="text-xs font-medium font-mono" style="color:${color}">${escapeHtml(m.sender)}</span>
+              <span class="text-xs text-muted">${timeAgo(m.created_at)}</span>
+              <span class="text-xs text-muted/50" title="Read by: ${readBy.join(', ')}">${readBy.length > 1 ? '✓✓' : '✓'}</span>
+            </div>
+            <div class="bg-panel border border-border rounded-lg px-3 py-2 text-sm whitespace-pre-wrap">${escapeHtml(m.content)}</div>
+          </div>`
+      }
+    </div>`
+  }).join('')
+
+  if (shouldScroll) container.scrollTop = container.scrollHeight
+}
+
+// --- Send message ---
+async function sendMessage() {
+  const sender = document.getElementById('sender-input').value.trim()
+  const content = document.getElementById('message-input').value.trim()
+  if (!sender || !content || !currentThreadId) return
+
+  try {
+    await api('POST', `/api/threads/${currentThreadId}/messages`, { from: sender, content })
+    document.getElementById('message-input').value = ''
+    await loadMessages()
+  } catch (e) {
+    console.error('Failed to send:', e)
+  }
+}
+
+document.getElementById('send-btn').onclick = sendMessage
+document.getElementById('message-input').onkeydown = (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
+}
+
+// --- New Thread ---
+document.getElementById('new-thread-btn').onclick = () => {
+  document.getElementById('new-thread-modal').classList.remove('hidden')
+  document.getElementById('nt-topic').focus()
+}
+document.getElementById('nt-cancel').onclick = () => {
+  document.getElementById('new-thread-modal').classList.add('hidden')
+}
+document.getElementById('nt-create').onclick = async () => {
+  const topic = document.getElementById('nt-topic').value.trim()
+  const participantsStr = document.getElementById('nt-participants').value.trim()
+  if (!topic || !participantsStr) return
+
+  const participants = participantsStr.split(',').map(s => s.trim()).filter(Boolean)
+  try {
+    const thread = await api('POST', '/api/threads', { topic, participants })
+    document.getElementById('new-thread-modal').classList.add('hidden')
+    document.getElementById('nt-topic').value = ''
+    document.getElementById('nt-participants').value = ''
+    await loadThreads()
+    selectThread(thread.id)
+  } catch (e) {
+    console.error('Failed to create thread:', e)
+  }
+}
+
+// --- Close Thread ---
+document.getElementById('close-thread-btn').onclick = () => {
+  document.getElementById('close-thread-modal').classList.remove('hidden')
+  document.getElementById('ct-reason').focus()
+}
+document.getElementById('ct-cancel').onclick = () => {
+  document.getElementById('close-thread-modal').classList.add('hidden')
+}
+document.getElementById('ct-confirm').onclick = async () => {
+  const reason = document.getElementById('ct-reason').value.trim()
+  const closedBy = document.getElementById('sender-input').value.trim() || 'anon'
+  try {
+    await api('PUT', `/api/threads/${currentThreadId}`, { status: 'closed', reason, closed_by: closedBy })
+    document.getElementById('close-thread-modal').classList.add('hidden')
+    document.getElementById('ct-reason').value = ''
+    await loadMessages()
+    await loadThreads()
+  } catch (e) {
+    console.error('Failed to close thread:', e)
+  }
+}
+
+// --- Init ---
+async function init() {
+  try {
+    await api('GET', '/api/status')
+    loadThreads()
+  } catch (e) {
+    if (e.message !== 'Unauthorized') {
+      // Try without auth (local dev)
+      loadThreads()
+    }
+  }
+}
+init()
+</script>
+</body>
+</html>
