@@ -41,31 +41,41 @@
 </head>
 <body class="h-screen overflow-hidden">
 
-  <!-- Auth Modal -->
-  <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden">
-    <div class="bg-panel border border-border rounded-lg p-6 w-80 shadow-2xl">
-      <h2 class="text-lg font-semibold mb-1">Agent-IM</h2>
-      <p class="text-sm text-text-secondary mb-4">Enter token to connect (leave empty for local dev)</p>
-      <input id="auth-token-input" type="password" placeholder="Bearer token"
-        class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent mb-3" />
-      <button id="auth-submit" class="w-full bg-accent text-bg font-medium rounded-lg py-2 text-sm hover:bg-accent-hover transition-colors">
-        Connect
-      </button>
-    </div>
-  </div>
-
   <!-- Main Layout -->
   <div id="app" class="h-screen flex">
 
-    <!-- Thread List (left panel) -->
-    <div id="thread-panel" class="w-80 min-w-[320px] border-r border-border flex flex-col bg-panel max-md:w-full max-md:min-w-0">
+    <!-- Left Panel (sidebar) -->
+    <div id="sidebar" class="w-80 min-w-[320px] border-r border-border flex flex-col bg-panel max-md:w-full max-md:min-w-0">
+
+      <!-- Dynamic Header -->
       <div class="p-4 border-b border-border flex items-center justify-between">
-        <h1 class="text-base font-semibold">Threads</h1>
-        <button id="new-thread-btn" class="text-xs bg-accent text-bg px-3 py-1 rounded-md font-medium hover:bg-accent-hover transition-colors">
+        <h1 id="sidebar-title" class="text-base font-semibold">Threads</h1>
+        <button id="sidebar-action-btn" class="text-xs bg-accent text-bg px-3 py-1 rounded-md font-medium hover:bg-accent-hover transition-colors">
           + New
         </button>
       </div>
+
+      <!-- Scrollable Content Area -->
       <div id="thread-list" class="flex-1 overflow-y-auto"></div>
+      <div id="profile-list" class="flex-1 overflow-y-auto hidden"></div>
+
+      <!-- Footer Tab Bar -->
+      <div class="border-t border-border flex">
+        <button id="tab-threads" onclick="switchTab('threads')"
+          class="flex-1 py-2.5 text-xs font-medium text-center transition-colors text-accent border-t-2 border-accent -mt-px">
+          Threads
+        </button>
+        <button id="tab-profiles" onclick="switchTab('profiles')"
+          class="flex-1 py-2.5 text-xs font-medium text-center transition-colors text-muted hover:text-text-secondary border-t-2 border-transparent -mt-px">
+          Profiles
+        </button>
+        <form method="POST" action="/chat/logout" class="flex">
+          <button type="submit"
+            class="px-4 py-2.5 text-xs font-medium text-muted hover:text-red-400 transition-colors border-t-2 border-transparent -mt-px">
+            Logout
+          </button>
+        </form>
+      </div>
     </div>
 
     <!-- Message Panel (right) -->
@@ -111,8 +121,22 @@
       <h2 class="text-lg font-semibold mb-4">New Thread</h2>
       <input id="nt-topic" type="text" placeholder="Topic"
         class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent mb-3" />
-      <input id="nt-participants" type="text" placeholder="Participants (comma separated)"
-        class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent mb-4 font-mono" />
+
+      <!-- Participants Multi-Select -->
+      <div class="mb-4">
+        <label class="text-xs text-muted mb-1.5 block">Participants</label>
+        <!-- Selected chips -->
+        <div id="nt-chips" class="flex flex-wrap gap-1.5 mb-2 min-h-[24px]"></div>
+        <!-- Search / Add input -->
+        <div class="relative">
+          <input id="nt-search" type="text" placeholder="Search or add..."
+            class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent font-mono" />
+          <!-- Dropdown -->
+          <div id="nt-dropdown" class="absolute left-0 right-0 top-full mt-1 bg-panel border border-border rounded-lg max-h-40 overflow-y-auto z-10 hidden">
+          </div>
+        </div>
+      </div>
+
       <div class="flex gap-2 justify-end">
         <button id="nt-cancel" class="text-sm text-muted hover:text-text-primary px-3 py-2">Cancel</button>
         <button id="nt-create" class="bg-accent text-bg px-4 py-2 rounded-lg text-sm font-medium hover:bg-accent-hover transition-colors">Create</button>
@@ -133,11 +157,35 @@
     </div>
   </div>
 
+  <!-- Profile Modal (Add / Edit) -->
+  <div id="profile-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden">
+    <div class="bg-panel border border-border rounded-lg p-6 w-96 shadow-2xl">
+      <h2 id="pm-title" class="text-lg font-semibold mb-4">Add Profile</h2>
+      <input id="pm-id" type="text" placeholder="ID (e.g. claude-code)"
+        class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent mb-3 font-mono" />
+      <input id="pm-display-name" type="text" placeholder="Display name"
+        class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent mb-3" />
+      <select id="pm-role"
+        class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent mb-3 appearance-none">
+        <option value="agent">Agent</option>
+        <option value="human">Human</option>
+      </select>
+      <input id="pm-description" type="text" placeholder="Description (optional)"
+        class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent mb-4" />
+      <div class="flex gap-2 justify-end">
+        <button id="pm-cancel" class="text-sm text-muted hover:text-text-primary px-3 py-2">Cancel</button>
+        <button id="pm-save" class="bg-accent text-bg px-4 py-2 rounded-lg text-sm font-medium hover:bg-accent-hover transition-colors">Save</button>
+      </div>
+    </div>
+  </div>
+
 <script>
 // --- State ---
-let token = sessionStorage.getItem('aim_token') || ''
+let currentTab = 'threads'
 let currentThreadId = null
 let pollingInterval = null
+let allProfiles = []
+let selectedParticipants = []
 const SENDER_COLORS = ['#f97316','#a855f7','#3b82f6','#ec4899','#10b981','#eab308','#06b6d4','#f43f5e']
 
 // --- Utils ---
@@ -147,19 +195,12 @@ function senderColor(name) {
   return SENDER_COLORS[Math.abs(hash) % SENDER_COLORS.length]
 }
 
-function headers(json = false) {
-  const h = {}
-  if (token) h['Authorization'] = `Bearer ${token}`
-  if (json) h['Content-Type'] = 'application/json'
-  return h
-}
-
 async function api(method, path, body) {
-  const opts = { method, headers: headers(!!body) }
+  const opts = { method, headers: body ? { 'Content-Type': 'application/json' } : {} }
   if (body) opts.body = JSON.stringify(body)
   const res = await fetch(path, opts)
   if (res.status === 401) {
-    showAuthModal()
+    window.location.href = '/chat'
     throw new Error('Unauthorized')
   }
   return res.json()
@@ -182,17 +223,37 @@ function escapeHtml(str) {
   return div.innerHTML
 }
 
-// --- Auth ---
-function showAuthModal() {
-  document.getElementById('auth-modal').classList.remove('hidden')
-}
+// --- Tab Switching ---
+function switchTab(tab) {
+  currentTab = tab
+  const threadsTab = document.getElementById('tab-threads')
+  const profilesTab = document.getElementById('tab-profiles')
+  const threadList = document.getElementById('thread-list')
+  const profileList = document.getElementById('profile-list')
+  const title = document.getElementById('sidebar-title')
+  const actionBtn = document.getElementById('sidebar-action-btn')
 
-document.getElementById('auth-submit').onclick = () => {
-  token = document.getElementById('auth-token-input').value.trim()
-  sessionStorage.setItem('aim_token', token)
-  document.getElementById('auth-modal').classList.add('hidden')
-  loadThreads()
+  if (tab === 'threads') {
+    threadsTab.className = 'flex-1 py-2.5 text-xs font-medium text-center transition-colors text-accent border-t-2 border-accent -mt-px'
+    profilesTab.className = 'flex-1 py-2.5 text-xs font-medium text-center transition-colors text-muted hover:text-text-secondary border-t-2 border-transparent -mt-px'
+    threadList.classList.remove('hidden')
+    profileList.classList.add('hidden')
+    title.textContent = 'Threads'
+    actionBtn.textContent = '+ New'
+    actionBtn.onclick = openNewThreadModal
+    loadThreads()
+  } else {
+    profilesTab.className = 'flex-1 py-2.5 text-xs font-medium text-center transition-colors text-accent border-t-2 border-accent -mt-px'
+    threadsTab.className = 'flex-1 py-2.5 text-xs font-medium text-center transition-colors text-muted hover:text-text-secondary border-t-2 border-transparent -mt-px'
+    profileList.classList.remove('hidden')
+    threadList.classList.add('hidden')
+    title.textContent = 'Profiles'
+    actionBtn.textContent = '+ Add'
+    actionBtn.onclick = () => openProfileModal()
+    loadProfiles()
+  }
 }
+window.switchTab = switchTab
 
 // --- Threads ---
 async function loadThreads() {
@@ -228,32 +289,114 @@ function renderThreads(threads) {
   }).join('')
 }
 
+// --- Profiles ---
+async function loadProfiles() {
+  try {
+    const data = await api('GET', '/api/profiles')
+    allProfiles = data.profiles || []
+    renderProfiles(allProfiles)
+  } catch (e) {
+    console.error('Failed to load profiles:', e)
+  }
+}
+
+function renderProfiles(profiles) {
+  const list = document.getElementById('profile-list')
+  if (!profiles.length) {
+    list.innerHTML = '<div class="p-4 text-center text-muted text-sm">No profiles yet</div>'
+    return
+  }
+  list.innerHTML = profiles.map(p => {
+    const color = senderColor(p.id)
+    const roleClass = p.role === 'human' ? 'bg-blue-500/20 text-blue-400' : 'bg-accent/20 text-accent'
+    return `<div class="p-3 mx-2 my-1 rounded-lg cursor-pointer hover:bg-border/30 transition-colors" onclick="openProfileModal('${escapeHtml(p.id)}')">
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-sm font-medium font-mono" style="color:${color}">${escapeHtml(p.id)}</span>
+        <span class="text-xs px-1.5 py-0.5 rounded ${roleClass}">${p.role}</span>
+      </div>
+      ${p.display_name && p.display_name !== p.id ? `<div class="text-xs text-text-secondary">${escapeHtml(p.display_name)}</div>` : ''}
+      ${p.description ? `<div class="text-xs text-muted mt-0.5 truncate">${escapeHtml(p.description)}</div>` : ''}
+    </div>`
+  }).join('')
+}
+
+// --- Profile Modal ---
+function openProfileModal(editId) {
+  const modal = document.getElementById('profile-modal')
+  const titleEl = document.getElementById('pm-title')
+  const idInput = document.getElementById('pm-id')
+  const nameInput = document.getElementById('pm-display-name')
+  const roleSelect = document.getElementById('pm-role')
+  const descInput = document.getElementById('pm-description')
+
+  if (editId) {
+    const p = allProfiles.find(x => x.id === editId)
+    if (!p) return
+    titleEl.textContent = 'Edit Profile'
+    idInput.value = p.id
+    idInput.readOnly = true
+    idInput.classList.add('opacity-50')
+    nameInput.value = p.display_name || ''
+    roleSelect.value = p.role || 'agent'
+    descInput.value = p.description || ''
+  } else {
+    titleEl.textContent = 'Add Profile'
+    idInput.value = ''
+    idInput.readOnly = false
+    idInput.classList.remove('opacity-50')
+    nameInput.value = ''
+    roleSelect.value = 'agent'
+    descInput.value = ''
+  }
+  modal.classList.remove('hidden')
+  if (!editId) idInput.focus()
+  else nameInput.focus()
+}
+window.openProfileModal = openProfileModal
+
+document.getElementById('pm-cancel').onclick = () => {
+  document.getElementById('profile-modal').classList.add('hidden')
+}
+
+document.getElementById('pm-save').onclick = async () => {
+  const id = document.getElementById('pm-id').value.trim()
+  const display_name = document.getElementById('pm-display-name').value.trim()
+  const role = document.getElementById('pm-role').value
+  const description = document.getElementById('pm-description').value.trim()
+  if (!id) return
+
+  try {
+    await api('POST', '/api/profiles', { id, display_name: display_name || id, role, description: description || null })
+    document.getElementById('profile-modal').classList.add('hidden')
+    await loadProfiles()
+  } catch (e) {
+    console.error('Failed to save profile:', e)
+  }
+}
+
 // --- Select thread ---
 async function selectThread(id) {
   currentThreadId = id
+  if (currentTab !== 'threads') switchTab('threads')
 
-  // Mobile: show message panel
   if (window.innerWidth < 768) {
-    document.getElementById('thread-panel').classList.add('max-md:hidden')
+    document.getElementById('sidebar').classList.add('max-md:hidden')
     document.getElementById('message-panel').classList.remove('max-md:hidden')
     document.getElementById('back-btn').classList.remove('hidden')
   }
 
-  // Load thread info and messages
   loadThreads()
   await loadMessages()
 
-  // Start polling
   if (pollingInterval) clearInterval(pollingInterval)
   pollingInterval = setInterval(loadMessages, 3000)
 }
 window.selectThread = selectThread
 
-// Back button (mobile)
 document.getElementById('back-btn').onclick = () => {
   currentThreadId = null
   if (pollingInterval) clearInterval(pollingInterval)
-  document.getElementById('thread-panel').classList.remove('max-md:hidden')
+  document.getElementById('sidebar').classList.remove('max-md:hidden')
   document.getElementById('message-panel').classList.add('max-md:hidden')
 }
 
@@ -265,7 +408,6 @@ async function loadMessages() {
     const data = await api('GET', `/api/threads/${currentThreadId}/messages?reader=${encodeURIComponent(sender)}&limit=50`)
     renderMessages(data)
 
-    // Update header
     const threadsData = await api('GET', '/api/threads')
     const thread = (threadsData.threads || []).find(t => t.id === currentThreadId)
     if (thread) {
@@ -278,19 +420,8 @@ async function loadMessages() {
       badge.classList.remove('hidden')
 
       const closeBtn = document.getElementById('close-thread-btn')
-      if (thread.status === 'open') {
-        closeBtn.classList.remove('hidden')
-      } else {
-        closeBtn.classList.add('hidden')
-      }
-
-      // Show/hide input
-      const inputArea = document.getElementById('input-area')
-      if (thread.status === 'open') {
-        inputArea.classList.remove('hidden')
-      } else {
-        inputArea.classList.add('hidden')
-      }
+      closeBtn.classList.toggle('hidden', thread.status !== 'open')
+      document.getElementById('input-area').classList.toggle('hidden', thread.status !== 'open')
     }
   } catch (e) {
     console.error('Failed to load messages:', e)
@@ -352,25 +483,127 @@ document.getElementById('message-input').onkeydown = (e) => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
 }
 
-// --- New Thread ---
-document.getElementById('new-thread-btn').onclick = () => {
+// --- New Thread Modal ---
+function openNewThreadModal() {
+  selectedParticipants = []
+  renderChips()
+  document.getElementById('nt-topic').value = ''
+  document.getElementById('nt-search').value = ''
   document.getElementById('new-thread-modal').classList.remove('hidden')
   document.getElementById('nt-topic').focus()
+  // Pre-fetch profiles for dropdown
+  api('GET', '/api/profiles').then(data => {
+    allProfiles = data.profiles || []
+    renderParticipantDropdown('')
+  }).catch(() => {})
 }
+
+document.getElementById('sidebar-action-btn').onclick = openNewThreadModal
+
+function renderChips() {
+  const container = document.getElementById('nt-chips')
+  if (!selectedParticipants.length) {
+    container.innerHTML = '<span class="text-xs text-muted">No participants selected</span>'
+    return
+  }
+  container.innerHTML = selectedParticipants.map(name => {
+    const color = senderColor(name)
+    return `<span class="inline-flex items-center gap-1 bg-border/50 text-xs px-2 py-0.5 rounded-md font-mono" style="color:${color}">
+      ${escapeHtml(name)}
+      <span class="cursor-pointer opacity-60 hover:opacity-100" onclick="removeParticipant('${escapeHtml(name)}')">&times;</span>
+    </span>`
+  }).join('')
+}
+
+function addParticipant(name) {
+  name = name.trim()
+  if (!name || selectedParticipants.includes(name)) return
+  selectedParticipants.push(name)
+  renderChips()
+  renderParticipantDropdown(document.getElementById('nt-search').value)
+}
+window.addParticipant = addParticipant
+
+function removeParticipant(name) {
+  selectedParticipants = selectedParticipants.filter(p => p !== name)
+  renderChips()
+  renderParticipantDropdown(document.getElementById('nt-search').value)
+}
+window.removeParticipant = removeParticipant
+
+function renderParticipantDropdown(filter) {
+  const dropdown = document.getElementById('nt-dropdown')
+  const lower = filter.toLowerCase()
+  const filtered = allProfiles.filter(p =>
+    !selectedParticipants.includes(p.id) &&
+    (p.id.toLowerCase().includes(lower) || (p.display_name || '').toLowerCase().includes(lower))
+  )
+
+  if (!filtered.length && !filter) {
+    dropdown.classList.add('hidden')
+    return
+  }
+
+  let html = filtered.map(p => {
+    const roleClass = p.role === 'human' ? 'text-blue-400' : 'text-accent'
+    return `<div class="px-3 py-2 hover:bg-border/30 cursor-pointer flex items-center justify-between" onclick="addParticipant('${escapeHtml(p.id)}')">
+      <span class="text-sm font-mono">${escapeHtml(p.id)}</span>
+      <span class="text-xs ${roleClass}">${p.role}</span>
+    </div>`
+  }).join('')
+
+  // Show "add custom" option if filter text doesn't match any existing and isn't already selected
+  if (filter && !allProfiles.some(p => p.id === filter) && !selectedParticipants.includes(filter)) {
+    html += `<div class="px-3 py-2 hover:bg-border/30 cursor-pointer border-t border-border flex items-center gap-2 text-accent" onclick="addParticipant('${escapeHtml(filter)}')">
+      <span class="text-xs">+</span>
+      <span class="text-sm font-mono">${escapeHtml(filter)}</span>
+      <span class="text-xs text-muted">(new)</span>
+    </div>`
+  }
+
+  if (!html) {
+    dropdown.classList.add('hidden')
+    return
+  }
+
+  dropdown.innerHTML = html
+  dropdown.classList.remove('hidden')
+}
+
+const ntSearch = document.getElementById('nt-search')
+ntSearch.addEventListener('input', () => renderParticipantDropdown(ntSearch.value))
+ntSearch.addEventListener('focus', () => renderParticipantDropdown(ntSearch.value))
+ntSearch.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault()
+    const v = ntSearch.value.trim()
+    if (v) {
+      addParticipant(v)
+      ntSearch.value = ''
+      renderParticipantDropdown('')
+    }
+  }
+})
+
+// Close dropdown on outside click
+document.addEventListener('click', (e) => {
+  const dropdown = document.getElementById('nt-dropdown')
+  if (!e.target.closest('#nt-search') && !e.target.closest('#nt-dropdown')) {
+    dropdown.classList.add('hidden')
+  }
+})
+
 document.getElementById('nt-cancel').onclick = () => {
   document.getElementById('new-thread-modal').classList.add('hidden')
 }
+
 document.getElementById('nt-create').onclick = async () => {
   const topic = document.getElementById('nt-topic').value.trim()
-  const participantsStr = document.getElementById('nt-participants').value.trim()
-  if (!topic || !participantsStr) return
+  if (!topic || !selectedParticipants.length) return
 
-  const participants = participantsStr.split(',').map(s => s.trim()).filter(Boolean)
   try {
-    const thread = await api('POST', '/api/threads', { topic, participants })
+    const thread = await api('POST', '/api/threads', { topic, participants: selectedParticipants })
     document.getElementById('new-thread-modal').classList.add('hidden')
-    document.getElementById('nt-topic').value = ''
-    document.getElementById('nt-participants').value = ''
     await loadThreads()
     selectThread(thread.id)
   } catch (e) {
@@ -401,18 +634,8 @@ document.getElementById('ct-confirm').onclick = async () => {
 }
 
 // --- Init ---
-async function init() {
-  try {
-    await api('GET', '/api/status')
-    loadThreads()
-  } catch (e) {
-    if (e.message !== 'Unauthorized') {
-      // Try without auth (local dev)
-      loadThreads()
-    }
-  }
-}
-init()
+loadThreads()
+api('GET', '/api/profiles').then(data => { allProfiles = data.profiles || [] }).catch(() => {})
 </script>
 </body>
 </html>
