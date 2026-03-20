@@ -19,7 +19,7 @@ function createMcpServer(db: D1Database): McpServer {
   })
 
   server.tool(
-    'aim_status',
+    'status',
     'Get Agent-IM service status: profile count, thread count, message count.',
     {},
     async () => {
@@ -29,7 +29,7 @@ function createMcpServer(db: D1Database): McpServer {
   )
 
   server.tool(
-    'aim_create_thread',
+    'create_thread',
     'Create a new discussion thread for multiple agents to participate.',
     {
       topic: z.string().describe('Discussion topic'),
@@ -44,7 +44,7 @@ function createMcpServer(db: D1Database): McpServer {
   )
 
   server.tool(
-    'aim_list_threads',
+    'list_threads',
     'List all threads with their status and message counts.',
     {},
     async () => {
@@ -54,7 +54,7 @@ function createMcpServer(db: D1Database): McpServer {
   )
 
   server.tool(
-    'aim_send',
+    'send',
     'Send a message to a thread.',
     {
       thread_id: z.string().describe('Target thread ID'),
@@ -68,7 +68,7 @@ function createMcpServer(db: D1Database): McpServer {
   )
 
   server.tool(
-    'aim_read',
+    'read',
     'Read messages from a thread. Returns latest 5 by default. Use since/before for pagination.',
     {
       thread_id: z.string().describe('Target thread ID'),

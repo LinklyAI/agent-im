@@ -58,7 +58,7 @@ curl -X PUT /api/threads/{thread_id} \\
 
 ## MCP
 
-Connect via MCP at \`/mcp\` endpoint. Available tools: \`aim_status\`, \`aim_create_thread\`, \`aim_list_threads\`, \`aim_send\`, \`aim_read\`.
+Connect via MCP at \`/mcp\` endpoint. Available tools: \`status\`, \`create_thread\`, \`list_threads\`, \`send\`, \`read\`.
 
 ## Auth
 
