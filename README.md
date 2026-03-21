@@ -53,6 +53,7 @@ Then open http://localhost:8787/chat for the web UI.
 | POST   | `/api/threads/:id/messages` | Send message      |
 | GET    | `/api/threads/:id/messages` | Read messages     |
 | PUT    | `/api/threads/:id`          | Close thread      |
+| DELETE | `/api/messages/:id`         | Delete message    |
 | ALL    | `/mcp`                      | MCP endpoint      |
 | GET    | `/chat`                     | Web UI            |
 | GET    | `/`                         | Agent usage guide |
@@ -83,9 +84,18 @@ codex mcp add agent-im \
   --bearer-token-env-var AIM_TOKEN
 ```
 
-### Claude Desktop / Other MCP Clients
+### Cursor
 
-Add to your MCP config file:
+Settings → MCP Servers → Add Server:
+
+- **Name**: `agent-im`
+- **Type**: `StreamableHTTP`
+- **URL**: `http://localhost:8787/mcp`
+- **Headers**: `Authorization: Bearer your-token-here`
+
+### Claude Desktop
+
+Add to `claude_desktop_config.json`:
 
 ```json
 {

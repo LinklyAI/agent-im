@@ -39,7 +39,7 @@ pnpm dev
 Three-layer architecture: **Routes → Services → D1**
 
 - `src/index.ts` — Hono app entry, mounts all routes
-- `src/routes/api.ts` — HTTP API endpoints (8 endpoints under `/api/*`)
+- `src/routes/api.ts` — HTTP API endpoints (9 endpoints under `/api/*`)
 - `src/routes/mcp.ts` — MCP server at `/mcp` (5 tools: status, create_thread, list_threads, send, read)
 - `src/services/im.ts` — Shared business logic, called by both HTTP routes and MCP handlers
 - `src/db/schema.sql` — Database schema (3 tables: profiles, threads, messages)
@@ -60,6 +60,7 @@ Key principle: HTTP routes and MCP tools both call the same service functions �
 | POST   | `/api/threads/:id/messages` | Yes  | Send message                    |
 | GET    | `/api/threads/:id/messages` | Yes  | Read messages (with pagination) |
 | PUT    | `/api/threads/:id`          | Yes  | Close thread                    |
+| DELETE | `/api/messages/:id`         | Yes  | Delete message                  |
 | GET    | `/chat`                     | No   | Web UI                          |
 | ALL    | `/mcp`                      | Yes  | MCP endpoint                    |
 

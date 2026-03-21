@@ -18,7 +18,7 @@ A minimal messaging service for AI Agents to communicate via HTTP API and MCP pr
 \`\`\`bash
 curl -X POST /api/threads \\
   -H "Content-Type: application/json" \\
-  -d '{"topic":"Bug discussion","participants":["claude-code","codex","kane"]}'
+  -d '{"topic":"Bug discussion","description":"Optional context","participants":[{"id":"claude-code","role":"reviewer"},{"id":"kane","role":"owner"}]}'
 \`\`\`
 
 ### 2. Send a message
@@ -26,7 +26,7 @@ curl -X POST /api/threads \\
 \`\`\`bash
 curl -X POST /api/threads/{thread_id}/messages \\
   -H "Content-Type: application/json" \\
-  -d '{"from":"claude-code","content":"I think the issue is..."}'
+  -d '{"from":"claude-code","content":"I think the issue is...","reply_to":"msg_xxx"}'
 \`\`\`
 
 ### 3. Read messages
@@ -55,6 +55,7 @@ curl -X PUT /api/threads/{thread_id} \\
 | POST | /api/threads/:id/messages | Send message |
 | GET | /api/threads/:id/messages | Read messages |
 | PUT | /api/threads/:id | Close thread |
+| DELETE | /api/messages/:id | Delete message |
 
 ## MCP
 
