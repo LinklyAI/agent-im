@@ -15,7 +15,7 @@ import {
 function createMcpServer(db: D1Database): McpServer {
   const server = new McpServer({
     name: 'Agent-IM',
-    version: '0.1.0',
+    version: '0.2.0',
   })
 
   server.tool(
@@ -30,15 +30,26 @@ function createMcpServer(db: D1Database): McpServer {
 
   server.tool(
     'create_thread',
-    'Create a new discussion thread for multiple agents to participate.',
+    'Create a new discussion thread. Optionally add a description and assign roles to participants.',
     {
       topic: z.string().describe('Discussion topic'),
+      description: z.string().optional().describe('Thread description providing context or goals'),
       participants: z
-        .array(z.string())
-        .describe("List of participant names, e.g. ['claude-code', 'codex', 'kane']"),
+        .preprocess(
+          (val) => (typeof val === 'string' ? JSON.parse(val) : val),
+          z.array(
+            z.union([
+              z.string(),
+              z.object({ id: z.string(), role: z.string().optional() }),
+            ]),
+          ),
+        )
+        .describe(
+          'Participants: ["name1","name2"] or [{"id":"name1","role":"reviewer"},{"id":"name2","role":"owner"}]',
+        ),
     },
-    async ({ topic, participants }) => {
-      const thread = await createThread(db, { topic, participants })
+    async ({ topic, description, participants }) => {
+      const thread = await createThread(db, { topic, description, participants })
       return { content: [{ type: 'text', text: JSON.stringify(thread, null, 2) }] }
     },
   )
@@ -65,30 +76,43 @@ function createMcpServer(db: D1Database): McpServer {
 
   server.tool(
     'send',
-    'Send a message to a thread.',
+    'Send a message to a thread. Optionally reply to a specific message.',
     {
       thread_id: z.string().describe('Target thread ID'),
       from: z.string().describe("Sender name, e.g. 'claude-code'"),
       content: z.string().describe('Message content'),
+      reply_to: z
+        .string()
+        .optional()
+        .describe('Message ID to reply to (e.g. msg_xxx). Shows as a quoted reply.'),
     },
-    async ({ thread_id, from, content }) => {
-      const message = await sendMessage(db, thread_id, { from, content })
+    async ({ thread_id, from, content, reply_to }) => {
+      const message = await sendMessage(db, thread_id, { from, content, reply_to })
       return { content: [{ type: 'text', text: JSON.stringify(message, null, 2) }] }
     },
   )
 
   server.tool(
     'read',
-    'Read messages from a thread. Returns latest 5 by default. Use since/before for pagination.',
+    `Read messages from a thread. Returns latest 5 by default.
+
+TIP: To efficiently poll for new messages, save the created_at of the last message you received and pass it as "since" on the next read. This avoids re-reading old messages and saves context window.
+
+Pagination: if has_more is true, use the earliest message's created_at as "before" to fetch older messages.`,
     {
       thread_id: z.string().describe('Target thread ID'),
-      reader: z.string().describe('Reader ID, marks messages as read'),
-      since: z.string().optional().describe('ISO timestamp, return messages after this time'),
+      reader: z.string().describe('Your profile ID. Marks messages as read by you.'),
+      since: z
+        .string()
+        .optional()
+        .describe(
+          'ISO timestamp. Only return messages AFTER this time. Use for incremental polling.',
+        ),
       before: z
         .string()
         .optional()
-        .describe('ISO timestamp, return messages before this time (for pagination)'),
-      limit: z.number().optional().describe('Number of messages to return, default 5, max 50'),
+        .describe('ISO timestamp. Only return messages BEFORE this time. Use for backward pagination.'),
+      limit: z.number().optional().describe('Number of messages to return (default 5, max 50)'),
     },
     async ({ thread_id, reader, since, before, limit }) => {
       const result = await readMessages(db, thread_id, { reader, since, before, limit })
@@ -120,6 +144,8 @@ mcp.post('/', async (c) => {
 
 // GET and DELETE not supported in stateless mode
 mcp.get('/', (c) => c.json({ error: 'Method not allowed. Use POST for MCP requests.' }, 405))
-mcp.delete('/', (c) => c.json({ error: 'Method not allowed. Stateless mode, no sessions.' }, 405))
+mcp.delete('/', (c) =>
+  c.json({ error: 'Method not allowed. Stateless mode, no sessions.' }, 405),
+)
 
 export default mcp

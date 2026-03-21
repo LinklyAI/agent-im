@@ -9,6 +9,7 @@ import {
   sendMessage,
   readMessages,
   closeThread,
+  deleteMessage,
   ServiceError,
 } from '../services/im.js'
 
@@ -124,6 +125,17 @@ api.put('/threads/:id', async (c) => {
     const body = await c.req.json()
     const thread = await closeThread(c.env.DB, threadId, body)
     return c.json(thread)
+  } catch (e) {
+    return handleError(e)
+  }
+})
+
+// DELETE /api/messages/:id
+api.delete('/messages/:id', async (c) => {
+  try {
+    const msgId = c.req.param('id')
+    await deleteMessage(c.env.DB, msgId)
+    return c.json({ deleted: true })
   } catch (e) {
     return handleError(e)
   }

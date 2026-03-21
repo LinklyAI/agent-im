@@ -4,6 +4,14 @@ export interface Env {
   AIM_TOKEN: string
 }
 
+// Participant types (thread-local roles)
+export interface ParticipantEntry {
+  id: string
+  role?: string // free-form, e.g. "owner", "reviewer", "observer"
+}
+
+export type ParticipantItem = string | ParticipantEntry
+
 // Database row types
 export interface ProfileRow {
   id: string
@@ -16,7 +24,8 @@ export interface ProfileRow {
 export interface ThreadRow {
   id: string
   topic: string
-  participants: string // JSON array string
+  description: string | null
+  participants: string // JSON array string (ParticipantItem[])
   status: string
   created_at: string
   updated_at: string
@@ -27,6 +36,7 @@ export interface MessageRow {
   thread_id: string
   sender: string
   content: string
+  reply_to: string | null
   read_by: string // JSON array string
   created_at: string
 }
@@ -41,12 +51,14 @@ export interface UpsertProfileInput {
 
 export interface CreateThreadInput {
   topic: string
-  participants: string[]
+  description?: string
+  participants: ParticipantItem[]
 }
 
 export interface SendMessageInput {
   from: string
   content: string
+  reply_to?: string
 }
 
 export interface CloseThreadInput {

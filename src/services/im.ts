@@ -3,6 +3,8 @@ import type {
   ProfileRow,
   ThreadRow,
   MessageRow,
+  ParticipantEntry,
+  ParticipantItem,
   UpsertProfileInput,
   CreateThreadInput,
   SendMessageInput,
@@ -23,6 +25,22 @@ export class ServiceError extends Error {
   }
 }
 
+/** Parse participants JSON, compatible with old ["a"] and new [{"id":"a","role":"x"}] formats */
+export function normalizeParticipants(raw: string): ParticipantEntry[] {
+  const parsed: ParticipantItem[] = JSON.parse(raw)
+  return parsed.map((item) => (typeof item === 'string' ? { id: item } : item))
+}
+
+/** Extract participant IDs from a ParticipantItem array */
+function extractParticipantIds(items: ParticipantItem[]): string[] {
+  return items.map((item) => (typeof item === 'string' ? item : item.id))
+}
+
+/** Normalize input participants to ParticipantEntry[] for storage */
+function toParticipantEntries(items: ParticipantItem[]): ParticipantEntry[] {
+  return items.map((item) => (typeof item === 'string' ? { id: item } : item))
+}
+
 export async function getStatus(db: D1Database): Promise<StatusResponse> {
   const [profiles, threads, messages] = await db.batch([
     db.prepare('SELECT COUNT(*) as count FROM profiles'),
@@ -32,7 +50,7 @@ export async function getStatus(db: D1Database): Promise<StatusResponse> {
 
   return {
     name: 'Agent-IM',
-    version: '0.1.0',
+    version: '0.2.0',
     status: 'ok',
     profiles_count: (profiles.results[0] as { count: number }).count,
     threads_count: (threads.results[0] as { count: number }).count,
@@ -98,9 +116,11 @@ export async function createThread(db: D1Database, input: CreateThreadInput): Pr
   if (!input.participants?.length) throw new ServiceError('participants is required', 400)
 
   const id = threadId()
+  const participants = toParticipantEntries(input.participants)
+
   await db
-    .prepare('INSERT INTO threads (id, topic, participants) VALUES (?, ?, ?)')
-    .bind(id, input.topic, JSON.stringify(input.participants))
+    .prepare('INSERT INTO threads (id, topic, description, participants) VALUES (?, ?, ?, ?)')
+    .bind(id, input.topic, input.description ?? null, JSON.stringify(participants))
     .run()
 
   const thread = await db.prepare('SELECT * FROM threads WHERE id = ?').bind(id).first<ThreadRow>()
@@ -115,10 +135,12 @@ export async function listThreads(
   const binds: string[] = []
 
   // Filter by participant unless include_all is set
+  // Compatible with both old ["a"] and new [{"id":"a"}] formats
   if (!query.include_all) {
-    // D1 SQLite JSON: check if profile_id is in participants JSON array
-    conditions.push('EXISTS (SELECT 1 FROM json_each(t.participants) WHERE json_each.value = ?)')
-    binds.push(query.profile_id)
+    conditions.push(
+      "EXISTS (SELECT 1 FROM json_each(t.participants) AS je WHERE je.value = ? OR json_extract(je.value, '$.id') = ?)",
+    )
+    binds.push(query.profile_id, query.profile_id)
   }
 
   // Filter by status: default open only, unless include_closed
@@ -169,6 +191,17 @@ export async function sendMessage(
   if (!thread) throw new ServiceError('Thread not found', 404)
   if (thread.status !== 'open') throw new ServiceError('Thread is closed', 400)
 
+  // Validate reply_to if provided
+  if (input.reply_to) {
+    const replyMsg = await db
+      .prepare('SELECT id, thread_id FROM messages WHERE id = ?')
+      .bind(input.reply_to)
+      .first<{ id: string; thread_id: string }>()
+    if (!replyMsg) throw new ServiceError('Reply target message not found', 404)
+    if (replyMsg.thread_id !== threadIdValue)
+      throw new ServiceError('Reply target must be in the same thread', 400)
+  }
+
   await ensureProfile(db, input.from)
 
   const id = messageId()
@@ -177,9 +210,9 @@ export async function sendMessage(
   await db.batch([
     db
       .prepare(
-        'INSERT INTO messages (id, thread_id, sender, content, read_by) VALUES (?, ?, ?, ?, ?)',
+        'INSERT INTO messages (id, thread_id, sender, content, reply_to, read_by) VALUES (?, ?, ?, ?, ?, ?)',
       )
-      .bind(id, threadIdValue, input.from, input.content, readBy),
+      .bind(id, threadIdValue, input.from, input.content, input.reply_to ?? null, readBy),
     db.prepare("UPDATE threads SET updated_at = datetime('now') WHERE id = ?").bind(threadIdValue),
   ])
 
@@ -305,4 +338,14 @@ export async function closeThread(
     .bind(threadIdValue)
     .first<ThreadRow>()
   return updated!
+}
+
+export async function deleteMessage(db: D1Database, msgId: string): Promise<void> {
+  const message = await db
+    .prepare('SELECT * FROM messages WHERE id = ?')
+    .bind(msgId)
+    .first<MessageRow>()
+  if (!message) throw new ServiceError('Message not found', 404)
+
+  await db.prepare('DELETE FROM messages WHERE id = ?').bind(msgId).run()
 }

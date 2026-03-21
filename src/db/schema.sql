@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS profiles (
 CREATE TABLE IF NOT EXISTS threads (
   id TEXT PRIMARY KEY,
   topic TEXT NOT NULL,
+  description TEXT,
   participants TEXT NOT NULL,
   status TEXT DEFAULT 'open',
   created_at TEXT DEFAULT (datetime('now')),
@@ -20,6 +21,7 @@ CREATE TABLE IF NOT EXISTS messages (
   thread_id TEXT NOT NULL,
   sender TEXT NOT NULL,
   content TEXT NOT NULL,
+  reply_to TEXT,
   read_by TEXT DEFAULT '[]',
   created_at TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (thread_id) REFERENCES threads(id),
