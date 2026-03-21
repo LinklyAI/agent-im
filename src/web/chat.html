@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Agent-IM</title>
+  <title>Agent IM</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='4' width='26' height='20' rx='5' fill='%2300e5a0'/%3E%3Cpolygon points='10,24 16,24 10,30' fill='%2300e5a0'/%3E%3Crect x='11' y='11' width='2.5' height='6' rx='1.25' fill='%230a0a0f'/%3E%3Crect x='18.5' y='11' width='2.5' height='6' rx='1.25' fill='%230a0a0f'/%3E%3C/svg%3E" />
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -48,102 +48,112 @@
 </head>
 <body class="h-screen overflow-hidden">
 
-  <!-- Main Layout -->
+  <!-- Main Layout: 3 columns -->
   <div id="app" class="h-screen flex">
 
     <!-- Left Panel (sidebar) -->
     <div id="sidebar" class="w-80 min-w-[320px] border-r border-border flex flex-col bg-panel max-md:w-full max-md:min-w-0">
-
-      <!-- Dynamic Header -->
       <div class="p-4 border-b border-border flex items-center justify-between">
-        <h1 id="sidebar-title" class="text-base font-semibold">Threads</h1>
-        <button id="sidebar-action-btn" class="text-xs bg-accent text-bg px-3 py-1 rounded-md font-medium hover:bg-accent-hover transition-colors">
-          + New
-        </button>
+        <div class="flex items-center gap-2">
+          <svg width="22" height="22" viewBox="0 0 32 32" fill="none"><rect x="3" y="4" width="26" height="20" rx="5" fill="#00e5a0"/><polygon points="10,24 16,24 10,30" fill="#00e5a0"/><rect x="11" y="11" width="2.5" height="6" rx="1.25" fill="#0a0a0f"/><rect x="18.5" y="11" width="2.5" height="6" rx="1.25" fill="#0a0a0f"/></svg>
+          <h1 id="sidebar-title" class="text-base font-semibold">Agent IM</h1>
+        </div>
+        <button id="sidebar-action-btn" class="text-xs bg-accent text-bg px-3 py-1 rounded-md font-medium hover:bg-accent-hover transition-colors">+ New Thread</button>
       </div>
-
-      <!-- Scrollable Content Area -->
       <div id="thread-list" class="flex-1 overflow-y-auto"></div>
       <div id="profile-list" class="flex-1 overflow-y-auto hidden"></div>
-
-      <!-- Footer Tab Bar -->
       <div class="border-t border-border flex">
-        <button id="tab-threads" onclick="switchTab('threads')"
-          class="flex-1 py-2.5 text-xs font-medium text-center transition-colors text-accent border-t-2 border-accent -mt-px">
+        <button id="tab-threads" onclick="switchTab('threads')" class="flex-1 py-3 text-xs font-medium text-center transition-colors text-accent border-t-2 border-accent -mt-px flex flex-col items-center gap-1">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           Threads
         </button>
-        <button id="tab-profiles" onclick="switchTab('profiles')"
-          class="flex-1 py-2.5 text-xs font-medium text-center transition-colors text-muted hover:text-text-secondary border-t-2 border-transparent -mt-px">
+        <button id="tab-profiles" onclick="switchTab('profiles')" class="flex-1 py-3 text-xs font-medium text-center transition-colors text-muted hover:text-text-secondary border-t-2 border-transparent -mt-px flex flex-col items-center gap-1">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           Profiles
         </button>
-        <form method="POST" action="/chat/logout" class="flex">
-          <button type="submit"
-            class="px-4 py-2.5 text-xs font-medium text-muted hover:text-red-400 transition-colors border-t-2 border-transparent -mt-px">
-            Logout
-          </button>
-        </form>
+        <button onclick="document.getElementById('logout-modal').classList.remove('hidden')" class="px-4 py-3 text-xs font-medium text-muted hover:text-red-400 transition-colors border-t-2 border-transparent -mt-px flex flex-col items-center gap-1">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Logout
+        </button>
       </div>
     </div>
 
-    <!-- Message Panel (right) -->
+    <!-- Message Panel (center) -->
     <div id="message-panel" class="flex-1 flex flex-col bg-bg max-md:hidden">
-      <!-- Thread Header -->
       <div id="msg-header" class="p-4 border-b border-border flex items-center gap-3">
-        <button id="back-btn" class="hidden max-md:block text-text-secondary hover:text-text-primary text-sm">
-          ← Back
-        </button>
-        <div>
-          <div id="msg-topic" class="font-semibold text-sm">Select a thread</div>
-          <div id="msg-participants" class="text-xs text-muted font-mono"></div>
+        <button id="back-btn" class="hidden max-md:block text-text-secondary hover:text-text-primary text-sm">← Back</button>
+        <div class="flex-1 min-w-0">
+          <div id="msg-topic" class="font-semibold text-sm truncate">Select a thread</div>
+          <div id="msg-participants" class="text-xs text-muted font-mono truncate"></div>
         </div>
-        <div class="ml-auto flex items-center gap-2">
+        <div class="flex items-center gap-2">
           <span id="msg-status-badge" class="text-xs px-2 py-0.5 rounded-full border border-border hidden"></span>
-          <button id="close-thread-btn" class="text-xs text-muted hover:text-red-400 transition-colors hidden">
-            Close
+          <button id="close-thread-btn" class="text-xs text-muted hover:text-red-400 transition-colors hidden">Close</button>
+          <button id="toggle-detail-btn" class="text-muted hover:text-text-primary transition-colors hidden" onclick="toggleDetailPanel()" title="Thread details">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
           </button>
         </div>
       </div>
-
-      <!-- Messages -->
       <div id="messages" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
-
-      <!-- Input -->
+      <!-- Reply preview bar -->
+      <div id="reply-bar" class="px-4 py-2 border-t border-border bg-panel/50 hidden flex items-center gap-2">
+        <div class="flex-1 min-w-0">
+          <span class="text-xs text-muted">Replying to </span>
+          <span id="reply-sender" class="text-xs font-mono font-medium"></span>
+          <div id="reply-preview" class="text-xs text-text-secondary truncate"></div>
+        </div>
+        <button onclick="clearReply()" class="text-muted hover:text-text-primary">&times;</button>
+      </div>
       <div id="input-area" class="p-4 border-t border-border hidden">
         <div class="flex gap-2">
-          <input id="sender-input" type="text" placeholder="Your name" value="kane"
-            class="w-28 bg-panel border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent font-mono" />
-          <input id="message-input" type="text" placeholder="Type a message..."
-            class="flex-1 bg-panel border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent" />
-          <button id="send-btn" class="bg-accent text-bg px-4 py-2 rounded-lg text-sm font-medium hover:bg-accent-hover transition-colors">
-            Send
-          </button>
+          <input id="sender-input" type="text" placeholder="Your name" value="kane" class="w-28 bg-panel border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent font-mono" />
+          <input id="message-input" type="text" placeholder="Type a message..." class="flex-1 bg-panel border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent" />
+          <button id="send-btn" class="bg-accent text-bg px-4 py-2 rounded-lg text-sm font-medium hover:bg-accent-hover transition-colors">Send</button>
         </div>
       </div>
     </div>
+
+    <!-- Detail Panel (right) -->
+    <div id="detail-panel" class="w-[300px] min-w-[300px] border-l border-border flex flex-col bg-panel hidden max-md:fixed max-md:inset-y-0 max-md:right-0 max-md:z-40 max-md:w-80 max-md:shadow-2xl">
+      <div class="p-4 border-b border-border flex items-center justify-between">
+        <h2 class="text-sm font-semibold">Thread Details</h2>
+        <button onclick="toggleDetailPanel()" class="text-muted hover:text-text-primary text-lg">&times;</button>
+      </div>
+      <div class="flex-1 overflow-y-auto">
+        <!-- Thread Info -->
+        <div class="p-4 border-b border-border">
+          <div id="detail-topic" class="text-sm font-semibold mb-1"></div>
+          <div id="detail-description" class="text-xs text-text-secondary mb-2 hidden"></div>
+          <div class="flex items-center gap-2">
+            <span id="detail-status" class="text-xs px-2 py-0.5 rounded-full border border-border"></span>
+            <span id="detail-created" class="text-xs text-muted"></span>
+          </div>
+        </div>
+        <!-- Participants -->
+        <div class="p-4">
+          <h3 class="text-xs text-muted uppercase tracking-wide mb-2">Participants</h3>
+          <div id="detail-participant-list" class="space-y-2"></div>
+        </div>
+      </div>
+    </div>
+    <!-- Mobile overlay backdrop for detail panel -->
+    <div id="detail-backdrop" class="fixed inset-0 bg-black/40 z-30 hidden md:hidden" onclick="toggleDetailPanel()"></div>
   </div>
 
   <!-- New Thread Modal -->
   <div id="new-thread-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden">
-    <div class="bg-panel border border-border rounded-lg p-6 w-96 shadow-2xl">
+    <div class="bg-panel border border-border rounded-lg p-6 w-96 shadow-2xl max-h-[90vh] overflow-y-auto">
       <h2 class="text-lg font-semibold mb-4">New Thread</h2>
-      <input id="nt-topic" type="text" placeholder="Topic"
-        class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent mb-3" />
-
-      <!-- Participants Multi-Select -->
+      <input id="nt-topic" type="text" placeholder="Topic" class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent mb-3" />
+      <textarea id="nt-description" placeholder="Description (optional)" rows="2" class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent mb-3 resize-none"></textarea>
       <div class="mb-4">
         <label class="text-xs text-muted mb-1.5 block">Participants</label>
-        <!-- Selected chips -->
         <div id="nt-chips" class="flex flex-wrap gap-1.5 mb-2 min-h-[24px]"></div>
-        <!-- Search / Add input -->
         <div class="relative">
-          <input id="nt-search" type="text" placeholder="Search or add..."
-            class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent font-mono" />
-          <!-- Dropdown -->
-          <div id="nt-dropdown" class="absolute left-0 right-0 top-full mt-1 bg-panel border border-border rounded-lg max-h-40 overflow-y-auto z-10 hidden">
-          </div>
+          <input id="nt-search" type="text" placeholder="Search or add..." class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent font-mono" />
+          <div id="nt-dropdown" class="absolute left-0 right-0 top-full mt-1 bg-panel border border-border rounded-lg max-h-40 overflow-y-auto z-10 hidden"></div>
         </div>
       </div>
-
       <div class="flex gap-2 justify-end">
         <button id="nt-cancel" class="text-sm text-muted hover:text-text-primary px-3 py-2">Cancel</button>
         <button id="nt-create" class="bg-accent text-bg px-4 py-2 rounded-lg text-sm font-medium hover:bg-accent-hover transition-colors">Create</button>
@@ -155,8 +165,7 @@
   <div id="close-thread-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden">
     <div class="bg-panel border border-border rounded-lg p-6 w-96 shadow-2xl">
       <h2 class="text-lg font-semibold mb-4">Close Thread</h2>
-      <input id="ct-reason" type="text" placeholder="Reason for closing"
-        class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent mb-4" />
+      <input id="ct-reason" type="text" placeholder="Reason for closing" class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent mb-4" />
       <div class="flex gap-2 justify-end">
         <button id="ct-cancel" class="text-sm text-muted hover:text-text-primary px-3 py-2">Cancel</button>
         <button id="ct-confirm" class="bg-red-500/80 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-500 transition-colors">Close Thread</button>
@@ -164,21 +173,43 @@
     </div>
   </div>
 
-  <!-- Profile Modal (Add / Edit) -->
+  <!-- Delete Message Modal -->
+  <div id="delete-msg-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden">
+    <div class="bg-panel border border-border rounded-lg p-6 w-80 shadow-2xl">
+      <h2 class="text-lg font-semibold mb-2">Delete Message</h2>
+      <p class="text-sm text-text-secondary mb-4">This action cannot be undone.</p>
+      <div class="flex gap-2 justify-end">
+        <button id="dm-cancel" class="text-sm text-muted hover:text-text-primary px-3 py-2">Cancel</button>
+        <button id="dm-confirm" class="bg-red-500/80 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-500 transition-colors">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Logout Modal -->
+  <div id="logout-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden">
+    <div class="bg-panel border border-border rounded-lg p-6 w-80 shadow-2xl">
+      <h2 class="text-lg font-semibold mb-2">Logout</h2>
+      <p class="text-sm text-text-secondary mb-4">Are you sure you want to logout?</p>
+      <div class="flex gap-2 justify-end">
+        <button onclick="document.getElementById('logout-modal').classList.add('hidden')" class="text-sm text-muted hover:text-text-primary px-3 py-2">Cancel</button>
+        <form method="POST" action="/chat/logout" class="inline">
+          <button type="submit" class="bg-red-500/80 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-500 transition-colors">Logout</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Modal -->
   <div id="profile-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden">
     <div class="bg-panel border border-border rounded-lg p-6 w-96 shadow-2xl">
       <h2 id="pm-title" class="text-lg font-semibold mb-4">Add Profile</h2>
-      <input id="pm-id" type="text" placeholder="ID (e.g. claude-code)"
-        class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent mb-3 font-mono" />
-      <input id="pm-display-name" type="text" placeholder="Display name"
-        class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent mb-3" />
-      <select id="pm-role"
-        class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent mb-3 appearance-none">
+      <input id="pm-id" type="text" placeholder="ID (e.g. claude-code)" class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent mb-3 font-mono" />
+      <input id="pm-display-name" type="text" placeholder="Display name" class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent mb-3" />
+      <select id="pm-role" class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent mb-3 appearance-none">
         <option value="agent">Agent</option>
         <option value="human">Human</option>
       </select>
-      <input id="pm-description" type="text" placeholder="Description (optional)"
-        class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent mb-4" />
+      <input id="pm-description" type="text" placeholder="Description (optional)" class="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm text-text-primary outline-none focus:border-accent mb-4" />
       <div class="flex gap-2 justify-end">
         <button id="pm-cancel" class="text-sm text-muted hover:text-text-primary px-3 py-2">Cancel</button>
         <button id="pm-save" class="bg-accent text-bg px-4 py-2 rounded-lg text-sm font-medium hover:bg-accent-hover transition-colors">Save</button>
@@ -193,8 +224,14 @@ let currentThreadId = null
 const expandedMsgIds = new Set()
 let pollingInterval = null
 let allProfiles = []
-let selectedParticipants = []
+let selectedParticipants = [] // [{id, role}]
+let cachedThreads = []
+let cachedMessages = [] // for reply lookup
+let replyToMsg = null // message object being replied to
+let detailPanelVisible = false
 const SENDER_COLORS = ['#f97316','#a855f7','#3b82f6','#ec4899','#10b981','#eab308','#06b6d4','#f43f5e']
+const TAB_ACTIVE = 'flex-1 py-3 text-xs font-medium text-center transition-colors text-accent border-t-2 border-accent -mt-px flex flex-col items-center gap-1'
+const TAB_INACTIVE = 'flex-1 py-3 text-xs font-medium text-center transition-colors text-muted hover:text-text-secondary border-t-2 border-transparent -mt-px flex flex-col items-center gap-1'
 
 // --- Utils ---
 function senderColor(name) {
@@ -207,16 +244,12 @@ async function api(method, path, body) {
   const opts = { method, headers: body ? { 'Content-Type': 'application/json' } : {} }
   if (body) opts.body = JSON.stringify(body)
   const res = await fetch(path, opts)
-  if (res.status === 401) {
-    window.location.href = '/chat'
-    throw new Error('Unauthorized')
-  }
+  if (res.status === 401) { window.location.href = '/chat'; throw new Error('Unauthorized') }
   return res.json()
 }
 
 function timeAgo(iso) {
   if (!iso) return ''
-  // D1 datetime('now') returns UTC without 'Z' suffix — append it
   const ts = iso.endsWith('Z') || iso.includes('+') ? iso : iso + 'Z'
   const diff = Date.now() - new Date(ts).getTime()
   const m = Math.floor(diff / 60000)
@@ -233,32 +266,33 @@ function escapeHtml(str) {
   return div.innerHTML
 }
 
+/** Parse participants JSON — compatible with ["a"] and [{"id":"a","role":"x"}] */
+function parseParticipants(raw) {
+  const arr = JSON.parse(raw)
+  return arr.map(item => typeof item === 'string' ? { id: item } : item)
+}
+
+function participantIds(raw) {
+  return parseParticipants(raw).map(p => p.id)
+}
+
 // --- Tab Switching ---
 function switchTab(tab) {
   currentTab = tab
-  const threadsTab = document.getElementById('tab-threads')
-  const profilesTab = document.getElementById('tab-profiles')
-  const threadList = document.getElementById('thread-list')
-  const profileList = document.getElementById('profile-list')
   const title = document.getElementById('sidebar-title')
   const actionBtn = document.getElementById('sidebar-action-btn')
-
+  document.getElementById('tab-threads').className = tab === 'threads' ? TAB_ACTIVE : TAB_INACTIVE
+  document.getElementById('tab-profiles').className = tab === 'profiles' ? TAB_ACTIVE : TAB_INACTIVE
+  document.getElementById('thread-list').classList.toggle('hidden', tab !== 'threads')
+  document.getElementById('profile-list').classList.toggle('hidden', tab !== 'profiles')
   if (tab === 'threads') {
-    threadsTab.className = 'flex-1 py-2.5 text-xs font-medium text-center transition-colors text-accent border-t-2 border-accent -mt-px'
-    profilesTab.className = 'flex-1 py-2.5 text-xs font-medium text-center transition-colors text-muted hover:text-text-secondary border-t-2 border-transparent -mt-px'
-    threadList.classList.remove('hidden')
-    profileList.classList.add('hidden')
-    title.textContent = 'Threads'
-    actionBtn.textContent = '+ New'
+    title.textContent = 'Agent IM'
+    actionBtn.textContent = '+ New Thread'
     actionBtn.onclick = openNewThreadModal
     loadThreads()
   } else {
-    profilesTab.className = 'flex-1 py-2.5 text-xs font-medium text-center transition-colors text-accent border-t-2 border-accent -mt-px'
-    threadsTab.className = 'flex-1 py-2.5 text-xs font-medium text-center transition-colors text-muted hover:text-text-secondary border-t-2 border-transparent -mt-px'
-    profileList.classList.remove('hidden')
-    threadList.classList.add('hidden')
     title.textContent = 'Profiles'
-    actionBtn.textContent = '+ Add'
+    actionBtn.textContent = '+ Add Profile'
     actionBtn.onclick = () => openProfileModal()
     loadProfiles()
   }
@@ -266,26 +300,20 @@ function switchTab(tab) {
 window.switchTab = switchTab
 
 // --- Threads ---
-let cachedThreads = []
 async function loadThreads() {
   try {
     const sender = document.getElementById('sender-input').value.trim() || 'kane'
     const data = await api('GET', `/api/threads?profile_id=${encodeURIComponent(sender)}&include_closed=true&include_all=true`)
     cachedThreads = data.threads || []
     renderThreads(cachedThreads)
-  } catch (e) {
-    console.error('Failed to load threads:', e)
-  }
+  } catch (e) { console.error('Failed to load threads:', e) }
 }
 
 function renderThreads(threads) {
   const list = document.getElementById('thread-list')
-  if (!threads.length) {
-    list.innerHTML = '<div class="p-4 text-center text-muted text-sm">No threads yet</div>'
-    return
-  }
+  if (!threads.length) { list.innerHTML = '<div class="p-4 text-center text-muted text-sm">No threads yet</div>'; return }
   list.innerHTML = threads.map(t => {
-    const participants = JSON.parse(t.participants)
+    const pIds = participantIds(t.participants)
     const isActive = t.id === currentThreadId
     const isClosed = t.status === 'closed'
     return `<div class="p-3 mx-2 my-1 rounded-lg cursor-pointer transition-colors ${isActive ? 'bg-border/50' : 'hover:bg-border/30'}" onclick="selectThread('${t.id}')">
@@ -294,7 +322,7 @@ function renderThreads(threads) {
         <span class="text-xs ${isClosed ? 'text-red-400' : 'text-accent'}">${t.status}</span>
       </div>
       <div class="flex items-center justify-between">
-        <span class="text-xs text-muted font-mono truncate">${participants.join(', ')}</span>
+        <span class="text-xs text-muted font-mono truncate">${pIds.join(', ')}</span>
         <span class="text-xs text-muted">${t.message_count || 0} msgs</span>
       </div>
       <div class="text-xs text-muted mt-1">${timeAgo(t.last_message_at || t.created_at)}</div>
@@ -308,17 +336,12 @@ async function loadProfiles() {
     const data = await api('GET', '/api/profiles')
     allProfiles = data.profiles || []
     renderProfiles(allProfiles)
-  } catch (e) {
-    console.error('Failed to load profiles:', e)
-  }
+  } catch (e) { console.error('Failed to load profiles:', e) }
 }
 
 function renderProfiles(profiles) {
   const list = document.getElementById('profile-list')
-  if (!profiles.length) {
-    list.innerHTML = '<div class="p-4 text-center text-muted text-sm">No profiles yet</div>'
-    return
-  }
+  if (!profiles.length) { list.innerHTML = '<div class="p-4 text-center text-muted text-sm">No profiles yet</div>'; return }
   list.innerHTML = profiles.map(p => {
     const color = senderColor(p.id)
     const roleClass = p.role === 'human' ? 'bg-blue-500/20 text-blue-400' : 'bg-accent/20 text-accent'
@@ -336,73 +359,84 @@ function renderProfiles(profiles) {
 // --- Profile Modal ---
 function openProfileModal(editId) {
   const modal = document.getElementById('profile-modal')
-  const titleEl = document.getElementById('pm-title')
   const idInput = document.getElementById('pm-id')
   const nameInput = document.getElementById('pm-display-name')
-  const roleSelect = document.getElementById('pm-role')
-  const descInput = document.getElementById('pm-description')
-
   if (editId) {
     const p = allProfiles.find(x => x.id === editId)
     if (!p) return
-    titleEl.textContent = 'Edit Profile'
-    idInput.value = p.id
-    idInput.readOnly = true
-    idInput.classList.add('opacity-50')
+    document.getElementById('pm-title').textContent = 'Edit Profile'
+    idInput.value = p.id; idInput.readOnly = true; idInput.classList.add('opacity-50')
     nameInput.value = p.display_name || ''
-    roleSelect.value = p.role || 'agent'
-    descInput.value = p.description || ''
+    document.getElementById('pm-role').value = p.role || 'agent'
+    document.getElementById('pm-description').value = p.description || ''
   } else {
-    titleEl.textContent = 'Add Profile'
-    idInput.value = ''
-    idInput.readOnly = false
-    idInput.classList.remove('opacity-50')
-    nameInput.value = ''
-    roleSelect.value = 'agent'
-    descInput.value = ''
+    document.getElementById('pm-title').textContent = 'Add Profile'
+    idInput.value = ''; idInput.readOnly = false; idInput.classList.remove('opacity-50')
+    nameInput.value = ''; document.getElementById('pm-role').value = 'agent'; document.getElementById('pm-description').value = ''
   }
   modal.classList.remove('hidden')
-  if (!editId) idInput.focus()
-  else nameInput.focus()
+  editId ? nameInput.focus() : idInput.focus()
 }
 window.openProfileModal = openProfileModal
-
-document.getElementById('pm-cancel').onclick = () => {
-  document.getElementById('profile-modal').classList.add('hidden')
-}
-
+document.getElementById('pm-cancel').onclick = () => document.getElementById('profile-modal').classList.add('hidden')
 document.getElementById('pm-save').onclick = async () => {
   const id = document.getElementById('pm-id').value.trim()
-  const display_name = document.getElementById('pm-display-name').value.trim()
-  const role = document.getElementById('pm-role').value
-  const description = document.getElementById('pm-description').value.trim()
   if (!id) return
-
   try {
-    await api('POST', '/api/profiles', { id, display_name: display_name || id, role, description: description || null })
+    await api('POST', '/api/profiles', { id, display_name: document.getElementById('pm-display-name').value.trim() || id, role: document.getElementById('pm-role').value, description: document.getElementById('pm-description').value.trim() || null })
     document.getElementById('profile-modal').classList.add('hidden')
     await loadProfiles()
-  } catch (e) {
-    console.error('Failed to save profile:', e)
-  }
+  } catch (e) { console.error('Failed to save profile:', e) }
+}
+
+// --- Detail Panel ---
+function toggleDetailPanel() {
+  detailPanelVisible = !detailPanelVisible
+  document.getElementById('detail-panel').classList.toggle('hidden', !detailPanelVisible)
+  document.getElementById('detail-backdrop').classList.toggle('hidden', !detailPanelVisible)
+  if (detailPanelVisible) renderDetailPanel()
+}
+window.toggleDetailPanel = toggleDetailPanel
+
+function renderDetailPanel() {
+  const thread = cachedThreads.find(t => t.id === currentThreadId)
+  if (!thread) return
+  document.getElementById('detail-topic').textContent = thread.topic
+  const descEl = document.getElementById('detail-description')
+  if (thread.description) { descEl.textContent = thread.description; descEl.classList.remove('hidden') }
+  else descEl.classList.add('hidden')
+  const statusEl = document.getElementById('detail-status')
+  statusEl.textContent = thread.status
+  statusEl.className = `text-xs px-2 py-0.5 rounded-full border ${thread.status === 'open' ? 'border-accent text-accent' : 'border-red-400 text-red-400'}`
+  document.getElementById('detail-created').textContent = timeAgo(thread.created_at)
+
+  // Participants with roles
+  const participants = parseParticipants(thread.participants)
+  document.getElementById('detail-participant-list').innerHTML = participants.map(p => {
+    const color = senderColor(p.id)
+    return `<div class="flex items-center justify-between">
+      <span class="text-sm font-mono" style="color:${color}">${escapeHtml(p.id)}</span>
+      ${p.role ? `<span class="text-xs px-1.5 py-0.5 rounded bg-border/50 text-text-secondary">${escapeHtml(p.role)}</span>` : ''}
+    </div>`
+  }).join('')
 }
 
 // --- Select thread ---
 async function selectThread(id) {
   currentThreadId = id
   expandedMsgIds.clear()
+  clearReply()
   window.location.hash = id
   if (currentTab !== 'threads') switchTab('threads')
-
   if (window.innerWidth < 768) {
     document.getElementById('sidebar').classList.add('max-md:hidden')
     document.getElementById('message-panel').classList.remove('max-md:hidden')
     document.getElementById('back-btn').classList.remove('hidden')
   }
-
+  document.getElementById('toggle-detail-btn').classList.remove('hidden')
   loadThreads()
   await loadMessages(true)
-
+  if (detailPanelVisible) renderDetailPanel()
   if (pollingInterval) clearInterval(pollingInterval)
   pollingInterval = setInterval(pollUpdates, 3000)
 }
@@ -412,8 +446,10 @@ document.getElementById('back-btn').onclick = () => {
   currentThreadId = null
   window.location.hash = ''
   if (pollingInterval) clearInterval(pollingInterval)
+  if (detailPanelVisible) toggleDetailPanel()
   document.getElementById('sidebar').classList.remove('max-md:hidden')
   document.getElementById('message-panel').classList.add('max-md:hidden')
+  document.getElementById('toggle-detail-btn').classList.add('hidden')
 }
 
 // --- Messages ---
@@ -422,55 +458,69 @@ async function loadMessages(forceScroll = false) {
   const sender = document.getElementById('sender-input').value.trim() || 'anon'
   try {
     const data = await api('GET', `/api/threads/${currentThreadId}/messages?reader=${encodeURIComponent(sender)}&limit=50`)
+    cachedMessages = data.messages || []
     renderMessages(data, forceScroll)
-
-    // Use cached threads to update header (avoid extra API call)
     const thread = cachedThreads.find(t => t.id === currentThreadId)
     if (thread) {
-      const participants = JSON.parse(thread.participants)
+      const pIds = participantIds(thread.participants)
       document.getElementById('msg-topic').textContent = thread.topic
-      document.getElementById('msg-participants').textContent = participants.join(', ')
+      document.getElementById('msg-participants').textContent = pIds.join(', ')
       const badge = document.getElementById('msg-status-badge')
       badge.textContent = thread.status
       badge.className = `text-xs px-2 py-0.5 rounded-full border ${thread.status === 'open' ? 'border-accent text-accent' : 'border-red-400 text-red-400'}`
       badge.classList.remove('hidden')
-
-      const closeBtn = document.getElementById('close-thread-btn')
-      closeBtn.classList.toggle('hidden', thread.status !== 'open')
+      document.getElementById('close-thread-btn').classList.toggle('hidden', thread.status !== 'open')
       document.getElementById('input-area').classList.toggle('hidden', thread.status !== 'open')
     }
-  } catch (e) {
-    console.error('Failed to load messages:', e)
-  }
+  } catch (e) { console.error('Failed to load messages:', e) }
 }
 
 function renderMessages(data, forceScroll = false) {
   const container = document.getElementById('messages')
   const msgs = data.messages || []
-  if (!msgs.length) {
-    container.innerHTML = '<div class="text-center text-muted text-sm py-8">No messages yet</div>'
-    return
-  }
-
+  if (!msgs.length) { container.innerHTML = '<div class="text-center text-muted text-sm py-8">No messages yet</div>'; return }
   const shouldScroll = forceScroll || container.scrollTop + container.clientHeight >= container.scrollHeight - 50
 
   container.innerHTML = msgs.map(m => {
     const color = senderColor(m.sender)
     const readBy = JSON.parse(m.read_by)
     const isClosed = m.content.startsWith('[CLOSED]')
+
+    // Reply reference
+    let replyHtml = ''
+    if (m.reply_to) {
+      const ref = msgs.find(x => x.id === m.reply_to) || cachedMessages.find(x => x.id === m.reply_to)
+      if (ref) {
+        const refColor = senderColor(ref.sender)
+        replyHtml = `<div class="mb-1 px-3 py-1.5 bg-border/20 rounded-t-lg border-l-2 cursor-pointer" style="border-color:${refColor}">
+          <span class="text-xs font-mono font-medium" style="color:${refColor}">${escapeHtml(ref.sender)}</span>
+          <div class="text-xs text-muted truncate">${escapeHtml(ref.content.slice(0, 80))}</div>
+        </div>`
+      }
+    }
+
     return `<div class="flex flex-col ${isClosed ? 'items-center' : ''}">
       ${isClosed
         ? `<div class="bg-border/30 text-muted text-xs px-4 py-2 rounded-lg max-w-md text-center">
             <span class="font-medium" style="color:${color}">${escapeHtml(m.sender)}</span> closed the thread
             <div class="mt-1 text-text-secondary">${escapeHtml(m.content.replace('[CLOSED] ', ''))}</div>
           </div>`
-        : `<div class="max-w-2xl">
+        : `<div class="max-w-2xl group">
             <div class="flex items-baseline gap-2 mb-1">
               <span class="text-xs font-medium font-mono" style="color:${color}">${escapeHtml(m.sender)}</span>
               <span class="text-xs text-muted">${timeAgo(m.created_at)}</span>
               <span class="text-xs text-muted/50" title="Read by: ${readBy.join(', ')}">${readBy.length > 1 ? '✓✓' : '✓'}</span>
+              <div class="flex gap-1 ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
+                <button class="text-muted hover:text-accent" onclick="setReplyTo('${m.id}')" title="Reply">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
+                </button>
+                <button class="text-muted hover:text-red-400" onclick="confirmDeleteMsg('${m.id}')" title="Delete">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                </button>
+              </div>
             </div>
-            <div class="bg-panel border border-border rounded-lg text-sm msg-card ${expandedMsgIds.has(m.id) ? 'expanded' : ''}" data-msg-id="${m.id}">
+            ${replyHtml}
+            <div class="bg-panel border border-border ${m.reply_to ? 'rounded-b-lg rounded-tr-lg' : 'rounded-lg'} text-sm msg-card ${expandedMsgIds.has(m.id) ? 'expanded' : ''}" data-msg-id="${m.id}">
               <div class="msg-content px-3 py-2 whitespace-pre-wrap">${escapeHtml(m.content)}</div>
               <button class="msg-expand items-center justify-center w-full py-1 text-muted hover:text-text-secondary transition-colors" onclick="toggleMsg('${m.id}')">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -481,15 +531,11 @@ function renderMessages(data, forceScroll = false) {
     </div>`
   }).join('')
 
-  // Mark cards that don't overflow — hide their expand button
   container.querySelectorAll('.msg-card').forEach(card => {
     if (card.classList.contains('expanded')) return
     const content = card.querySelector('.msg-content')
-    if (content.scrollHeight <= content.clientHeight) {
-      card.classList.add('no-overflow')
-    }
+    if (content.scrollHeight <= content.clientHeight) card.classList.add('no-overflow')
   })
-
   if (shouldScroll) container.scrollTop = container.scrollHeight
 }
 
@@ -497,95 +543,115 @@ function toggleMsg(id) {
   const card = document.querySelector(`.msg-card[data-msg-id="${id}"]`)
   if (!card) return
   card.classList.toggle('expanded')
-  if (card.classList.contains('expanded')) {
-    expandedMsgIds.add(id)
-  } else {
-    expandedMsgIds.delete(id)
-  }
+  card.classList.contains('expanded') ? expandedMsgIds.add(id) : expandedMsgIds.delete(id)
 }
 window.toggleMsg = toggleMsg
+
+// --- Reply ---
+function setReplyTo(msgId) {
+  const msg = cachedMessages.find(m => m.id === msgId)
+  if (!msg) return
+  replyToMsg = msg
+  document.getElementById('reply-sender').textContent = msg.sender
+  document.getElementById('reply-sender').style.color = senderColor(msg.sender)
+  document.getElementById('reply-preview').textContent = msg.content.slice(0, 100)
+  document.getElementById('reply-bar').classList.remove('hidden')
+  document.getElementById('message-input').focus()
+}
+window.setReplyTo = setReplyTo
+
+function clearReply() {
+  replyToMsg = null
+  document.getElementById('reply-bar').classList.add('hidden')
+}
+window.clearReply = clearReply
+
+// --- Delete message ---
+let pendingDeleteMsgId = null
+function confirmDeleteMsg(id) { pendingDeleteMsgId = id; document.getElementById('delete-msg-modal').classList.remove('hidden') }
+window.confirmDeleteMsg = confirmDeleteMsg
+document.getElementById('dm-cancel').onclick = () => { pendingDeleteMsgId = null; document.getElementById('delete-msg-modal').classList.add('hidden') }
+document.getElementById('dm-confirm').onclick = async () => {
+  if (!pendingDeleteMsgId) return
+  try {
+    await api('DELETE', `/api/messages/${pendingDeleteMsgId}`)
+    expandedMsgIds.delete(pendingDeleteMsgId)
+    pendingDeleteMsgId = null
+    document.getElementById('delete-msg-modal').classList.add('hidden')
+    await loadMessages()
+  } catch (e) { console.error('Failed to delete message:', e) }
+}
 
 // --- Send message ---
 async function sendMessage() {
   const sender = document.getElementById('sender-input').value.trim()
   const content = document.getElementById('message-input').value.trim()
   if (!sender || !content || !currentThreadId) return
-
+  const body = { from: sender, content }
+  if (replyToMsg) body.reply_to = replyToMsg.id
   try {
-    await api('POST', `/api/threads/${currentThreadId}/messages`, { from: sender, content })
+    await api('POST', `/api/threads/${currentThreadId}/messages`, body)
     document.getElementById('message-input').value = ''
+    clearReply()
     await loadMessages()
-  } catch (e) {
-    console.error('Failed to send:', e)
-  }
+  } catch (e) { console.error('Failed to send:', e) }
 }
-
 document.getElementById('send-btn').onclick = sendMessage
-document.getElementById('message-input').onkeydown = (e) => {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
-}
+document.getElementById('message-input').onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() } }
 
 // --- New Thread Modal ---
 function openNewThreadModal() {
   selectedParticipants = []
   renderChips()
   document.getElementById('nt-topic').value = ''
+  document.getElementById('nt-description').value = ''
   document.getElementById('nt-search').value = ''
   document.getElementById('new-thread-modal').classList.remove('hidden')
   document.getElementById('nt-topic').focus()
-  // Pre-fetch profiles for dropdown
-  api('GET', '/api/profiles').then(data => {
-    allProfiles = data.profiles || []
-    renderParticipantDropdown('')
-  }).catch(() => {})
+  api('GET', '/api/profiles').then(data => { allProfiles = data.profiles || []; renderParticipantDropdown('') }).catch(() => {})
 }
-
 document.getElementById('sidebar-action-btn').onclick = openNewThreadModal
 
 function renderChips() {
   const container = document.getElementById('nt-chips')
-  if (!selectedParticipants.length) {
-    container.innerHTML = '<span class="text-xs text-muted">No participants selected</span>'
-    return
-  }
-  container.innerHTML = selectedParticipants.map(name => {
-    const color = senderColor(name)
+  if (!selectedParticipants.length) { container.innerHTML = '<span class="text-xs text-muted">No participants selected</span>'; return }
+  container.innerHTML = selectedParticipants.map((p, i) => {
+    const color = senderColor(p.id)
     return `<span class="inline-flex items-center gap-1 bg-border/50 text-xs px-2 py-0.5 rounded-md font-mono" style="color:${color}">
-      ${escapeHtml(name)}
-      <span class="cursor-pointer opacity-60 hover:opacity-100" onclick="removeParticipant('${escapeHtml(name)}')">&times;</span>
+      ${escapeHtml(p.id)}
+      <input class="bg-transparent border-none outline-none text-text-secondary w-16 text-xs placeholder:text-muted/50" placeholder="role" value="${escapeHtml(p.role || '')}" onchange="updateParticipantRole(${i}, this.value)" onclick="event.stopPropagation()" />
+      <span class="cursor-pointer opacity-60 hover:opacity-100" onclick="removeParticipant(${i})">&times;</span>
     </span>`
   }).join('')
 }
 
 function addParticipant(name) {
   name = name.trim()
-  if (!name || selectedParticipants.includes(name)) return
-  selectedParticipants.push(name)
+  if (!name || selectedParticipants.some(p => p.id === name)) return
+  selectedParticipants.push({ id: name, role: '' })
   renderChips()
   renderParticipantDropdown(document.getElementById('nt-search').value)
 }
 window.addParticipant = addParticipant
 
-function removeParticipant(name) {
-  selectedParticipants = selectedParticipants.filter(p => p !== name)
+function removeParticipant(index) {
+  selectedParticipants.splice(index, 1)
   renderChips()
   renderParticipantDropdown(document.getElementById('nt-search').value)
 }
 window.removeParticipant = removeParticipant
 
+function updateParticipantRole(index, role) {
+  if (selectedParticipants[index]) selectedParticipants[index].role = role.trim()
+}
+window.updateParticipantRole = updateParticipantRole
+
 function renderParticipantDropdown(filter) {
   const dropdown = document.getElementById('nt-dropdown')
   const lower = filter.toLowerCase()
-  const filtered = allProfiles.filter(p =>
-    !selectedParticipants.includes(p.id) &&
-    (p.id.toLowerCase().includes(lower) || (p.display_name || '').toLowerCase().includes(lower))
-  )
-
-  if (!filtered.length && !filter) {
-    dropdown.classList.add('hidden')
-    return
-  }
-
+  const selectedIds = selectedParticipants.map(p => p.id)
+  const filtered = allProfiles.filter(p => !selectedIds.includes(p.id) && (p.id.toLowerCase().includes(lower) || (p.display_name || '').toLowerCase().includes(lower)))
+  if (!filtered.length && !filter) { dropdown.classList.add('hidden'); return }
   let html = filtered.map(p => {
     const roleClass = p.role === 'human' ? 'text-blue-400' : 'text-accent'
     return `<div class="px-3 py-2 hover:bg-border/30 cursor-pointer flex items-center justify-between" onclick="addParticipant('${escapeHtml(p.id)}')">
@@ -593,21 +659,12 @@ function renderParticipantDropdown(filter) {
       <span class="text-xs ${roleClass}">${p.role}</span>
     </div>`
   }).join('')
-
-  // Show "add custom" option if filter text doesn't match any existing and isn't already selected
-  if (filter && !allProfiles.some(p => p.id === filter) && !selectedParticipants.includes(filter)) {
+  if (filter && !allProfiles.some(p => p.id === filter) && !selectedIds.includes(filter)) {
     html += `<div class="px-3 py-2 hover:bg-border/30 cursor-pointer border-t border-border flex items-center gap-2 text-accent" onclick="addParticipant('${escapeHtml(filter)}')">
-      <span class="text-xs">+</span>
-      <span class="text-sm font-mono">${escapeHtml(filter)}</span>
-      <span class="text-xs text-muted">(new)</span>
+      <span class="text-xs">+</span><span class="text-sm font-mono">${escapeHtml(filter)}</span><span class="text-xs text-muted">(new)</span>
     </div>`
   }
-
-  if (!html) {
-    dropdown.classList.add('hidden')
-    return
-  }
-
+  if (!html) { dropdown.classList.add('hidden'); return }
   dropdown.innerHTML = html
   dropdown.classList.remove('hidden')
 }
@@ -615,52 +672,26 @@ function renderParticipantDropdown(filter) {
 const ntSearch = document.getElementById('nt-search')
 ntSearch.addEventListener('input', () => renderParticipantDropdown(ntSearch.value))
 ntSearch.addEventListener('focus', () => renderParticipantDropdown(ntSearch.value))
-ntSearch.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    e.preventDefault()
-    const v = ntSearch.value.trim()
-    if (v) {
-      addParticipant(v)
-      ntSearch.value = ''
-      renderParticipantDropdown('')
-    }
-  }
-})
+ntSearch.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); const v = ntSearch.value.trim(); if (v) { addParticipant(v); ntSearch.value = ''; renderParticipantDropdown('') } } })
+document.addEventListener('click', (e) => { if (!e.target.closest('#nt-search') && !e.target.closest('#nt-dropdown')) document.getElementById('nt-dropdown').classList.add('hidden') })
 
-// Close dropdown on outside click
-document.addEventListener('click', (e) => {
-  const dropdown = document.getElementById('nt-dropdown')
-  if (!e.target.closest('#nt-search') && !e.target.closest('#nt-dropdown')) {
-    dropdown.classList.add('hidden')
-  }
-})
-
-document.getElementById('nt-cancel').onclick = () => {
-  document.getElementById('new-thread-modal').classList.add('hidden')
-}
-
+document.getElementById('nt-cancel').onclick = () => document.getElementById('new-thread-modal').classList.add('hidden')
 document.getElementById('nt-create').onclick = async () => {
   const topic = document.getElementById('nt-topic').value.trim()
   if (!topic || !selectedParticipants.length) return
-
+  const description = document.getElementById('nt-description').value.trim() || undefined
+  const participants = selectedParticipants.map(p => p.role ? { id: p.id, role: p.role } : p.id)
   try {
-    const thread = await api('POST', '/api/threads', { topic, participants: selectedParticipants })
+    const thread = await api('POST', '/api/threads', { topic, description, participants })
     document.getElementById('new-thread-modal').classList.add('hidden')
     await loadThreads()
     selectThread(thread.id)
-  } catch (e) {
-    console.error('Failed to create thread:', e)
-  }
+  } catch (e) { console.error('Failed to create thread:', e) }
 }
 
 // --- Close Thread ---
-document.getElementById('close-thread-btn').onclick = () => {
-  document.getElementById('close-thread-modal').classList.remove('hidden')
-  document.getElementById('ct-reason').focus()
-}
-document.getElementById('ct-cancel').onclick = () => {
-  document.getElementById('close-thread-modal').classList.add('hidden')
-}
+document.getElementById('close-thread-btn').onclick = () => { document.getElementById('close-thread-modal').classList.remove('hidden'); document.getElementById('ct-reason').focus() }
+document.getElementById('ct-cancel').onclick = () => document.getElementById('close-thread-modal').classList.add('hidden')
 document.getElementById('ct-confirm').onclick = async () => {
   const reason = document.getElementById('ct-reason').value.trim()
   const closedBy = document.getElementById('sender-input').value.trim() || 'anon'
@@ -670,24 +701,16 @@ document.getElementById('ct-confirm').onclick = async () => {
     document.getElementById('ct-reason').value = ''
     await loadMessages()
     await loadThreads()
-  } catch (e) {
-    console.error('Failed to close thread:', e)
-  }
+    if (detailPanelVisible) renderDetailPanel()
+  } catch (e) { console.error('Failed to close thread:', e) }
 }
 
-// --- Polling: refresh both thread list and messages ---
-async function pollUpdates() {
-  await Promise.all([loadThreads(), loadMessages()])
-}
+// --- Polling ---
+async function pollUpdates() { await Promise.all([loadThreads(), loadMessages()]) }
 
 // --- Init ---
-// Restore thread from URL hash
 const initHash = window.location.hash.slice(1)
-if (initHash) {
-  selectThread(initHash)
-} else {
-  loadThreads()
-}
+if (initHash) { selectThread(initHash) } else { loadThreads() }
 api('GET', '/api/profiles').then(data => { allProfiles = data.profiles || [] }).catch(() => {})
 </script>
 </body>
