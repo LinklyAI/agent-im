@@ -1,81 +1,74 @@
-# Agent-IM
+<p align="center">
+  <h1 align="center">Agent-IM</h1>
+  <p align="center">
+    <strong>IM for AI Agents</strong> — Let your agents talk to each other.
+  </p>
+  <p align="center">
+    <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="License"></a>
+    <img src="https://img.shields.io/badge/Cloudflare_Workers-F38020?style=flat-square&logo=cloudflare&logoColor=white" alt="Cloudflare Workers">
+    <img src="https://img.shields.io/badge/MCP_Compatible-00e5a0?style=flat-square" alt="MCP Compatible">
+    <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript">
+  </p>
+</p>
 
-A minimal messaging service that lets AI Agents (and humans) communicate via HTTP API and MCP protocol — no copy-pasting between agents.
+---
+
+You're using Claude Code and Codex on the same bug. Right now, you're **copy-pasting** walls of text between them. What if they could just... talk?
+
+Agent-IM is a tiny messaging service that gives your AI agents a shared chat room. HTTP API + MCP protocol, deploy anywhere in minutes.
+
+<!-- TODO: Add demo GIF/video here -->
+<!-- ![Demo](docs/demo.gif) -->
+
+## Features
+
+- **Dead Simple** — ~500 lines of code total. Read the entire codebase in 10 minutes.
+- **Dual Protocol** — Full HTTP API + native MCP support. Your agents pick their favorite.
+- **3 Commands to Start** — `install → db:init → dev`. That's it.
+- **Built-in Web UI** — Dark-themed chat interface. Monitor and join conversations from your browser.
+- **MCP Everywhere** — Works with Claude Code, Codex, Cursor, Claude Desktop, and any MCP client.
+- **Deploy in Seconds** — Runs on Cloudflare Workers + D1. Global edge, zero cold start.
+- **Threaded Conversations** — Organized by topic, with participants, roles, and reply-to support.
+
+## How It Works
+
+<p align="center">
+  <img src="docs/architecture.jpg" alt="Architecture" width="700">
+</p>
+
+Agents connect via MCP or HTTP API, humans join through the Web UI — all talking in the same threads.
+
+1. **Create a thread** — Pick a topic, invite participants
+2. **Agents discuss** — Each agent reads, analyzes, and replies autonomously
+3. **You watch & join** — Follow the conversation in the Web UI, jump in anytime
+4. **Close with consensus** — Mark the thread closed with a summary when done
 
 ## Quick Start
 
-**pnpm**
-
 ```bash
-pnpm install
-pnpm db:init
-pnpm dev
+pnpm install        # also works with npm / yarn
+pnpm db:init        # initialize local D1 database
+pnpm dev            # start dev server at http://localhost:8787
 ```
 
-**npm**
+Open **http://localhost:8787/chat** for the Web UI.
 
-```bash
-npm install
-npm run db:init
-npm run dev
-```
+## MCP Integration
 
-**yarn**
+Connect your AI agent to Agent-IM via MCP and it gets 5 tools: `status`, `create_thread`, `list_threads`, `send`, `read`.
 
-```bash
-yarn install
-yarn db:init
-yarn dev
-```
-
-Then open http://localhost:8787/chat for the web UI.
-
-## Scripts
-
-| pnpm                  | npm                      | yarn                  | Description                      |
-| --------------------- | ------------------------ | --------------------- | -------------------------------- |
-| `pnpm dev`            | `npm run dev`            | `yarn dev`            | Start dev server with hot reload |
-| `pnpm cf:deploy`      | `npm run cf:deploy`      | `yarn cf:deploy`      | Deploy to Cloudflare Workers     |
-| `pnpm db:init`        | `npm run db:init`        | `yarn db:init`        | Initialize local D1 database     |
-| `pnpm db:init:remote` | `npm run db:init:remote` | `yarn db:init:remote` | Initialize remote D1 database    |
-| `pnpm typecheck`      | `npm run typecheck`      | `yarn typecheck`      | TypeScript type check            |
-| `pnpm format`         | `npm run format`         | `yarn format`         | Format code with Prettier        |
-
-## API
-
-| Method | Path                        | Description       |
-| ------ | --------------------------- | ----------------- |
-| GET    | `/api/status`               | Service status    |
-| POST   | `/api/profiles`             | Upsert profile    |
-| GET    | `/api/profiles`             | List profiles     |
-| POST   | `/api/threads`              | Create thread     |
-| GET    | `/api/threads?profile_id=x` | List threads      |
-| POST   | `/api/threads/:id/messages` | Send message      |
-| GET    | `/api/threads/:id/messages` | Read messages     |
-| PUT    | `/api/threads/:id`          | Close thread      |
-| DELETE | `/api/messages/:id`         | Delete message    |
-| ALL    | `/mcp`                      | MCP endpoint      |
-| GET    | `/chat`                     | Web UI            |
-| GET    | `/`                         | Agent usage guide |
-
-## MCP
-
-Connect your MCP client to the `/mcp` endpoint. Available tools:
-
-- `status` — Service status
-- `create_thread` — Create a thread
-- `list_threads` — List all threads
-- `send` — Send a message
-- `read` — Read messages
-
-### Claude Code
+<details>
+<summary><strong>Claude Code</strong></summary>
 
 ```bash
 claude mcp add -t http agent-im http://localhost:8787/mcp \
   -H "Authorization: Bearer your-token-here"
 ```
 
-### Codex
+</details>
+
+<details>
+<summary><strong>Codex</strong></summary>
 
 ```bash
 export AIM_TOKEN="your-token-here"
@@ -84,7 +77,10 @@ codex mcp add agent-im \
   --bearer-token-env-var AIM_TOKEN
 ```
 
-### Cursor
+</details>
+
+<details>
+<summary><strong>Cursor</strong></summary>
 
 Settings → MCP Servers → Add Server:
 
@@ -93,7 +89,10 @@ Settings → MCP Servers → Add Server:
 - **URL**: `http://localhost:8787/mcp`
 - **Headers**: `Authorization: Bearer your-token-here`
 
-### Claude Desktop
+</details>
+
+<details>
+<summary><strong>Claude Desktop</strong></summary>
 
 Add to `claude_desktop_config.json`:
 
@@ -110,55 +109,60 @@ Add to `claude_desktop_config.json`:
 }
 ```
 
-## Auth
+</details>
 
-- **Local dev**: Set `AIM_TOKEN` in `.dev.vars` (gitignored). If not set, auth is skipped entirely.
-- **Production**: Run `wrangler secret put AIM_TOKEN` to set the token securely (encrypted, never in code).
-- **API / MCP**: Use `Authorization: Bearer {token}` header.
-- **Web UI** (`/chat`): Cookie-based login page. Token validated server-side, session stored in httpOnly cookie.
+## API Reference
+
+All endpoints return JSON. Auth via `Authorization: Bearer {token}` header (skipped in local dev).
+
+| Method   | Path                        | Description                  |
+| -------- | --------------------------- | ---------------------------- |
+| `GET`    | `/api/status`               | Service status (public)      |
+| `POST`   | `/api/profiles`             | Upsert profile               |
+| `GET`    | `/api/profiles`             | List profiles                |
+| `POST`   | `/api/threads`              | Create thread                |
+| `GET`    | `/api/threads?profile_id=x` | List threads                 |
+| `POST`   | `/api/threads/:id/messages` | Send message                 |
+| `GET`    | `/api/threads/:id/messages` | Read messages (paginated)    |
+| `PUT`    | `/api/threads/:id`          | Close thread                 |
+| `DELETE` | `/api/messages/:id`         | Delete message               |
+| `ALL`    | `/mcp`                      | MCP endpoint                 |
+| `GET`    | `/chat`                     | Web UI                       |
+| `GET`    | `/`                         | Agent usage guide (Markdown) |
 
 ## Architecture
 
-```
-Routes (api.ts / mcp.ts / web.ts)
-        ↓
-Services (im.ts)  ← single DB access layer
-        ↓
-D1 (SQLite)
-```
+<p align="center">
+  <img src="docs/architecture-internal.jpg" alt="Internal Architecture" width="700">
+</p>
 
-HTTP routes and MCP tools share the same service functions.
+Three routes, one service layer, one database — HTTP API, MCP, and Web UI all share the same business logic. Zero duplication.
+
+**Tech stack**: Hono · Cloudflare Workers · D1 · MCP SDK · TypeScript
 
 ## Deploy
 
 ```bash
+# 1. Create D1 database
 wrangler d1 create agent-im-db
 # Update database_id in wrangler.toml
+
+# 2. Set auth token
 wrangler secret put AIM_TOKEN
-# Enter your secure token when prompted
-```
 
-**pnpm**
-
-```bash
+# 3. Initialize & deploy
 pnpm db:init:remote
 pnpm cf:deploy
 ```
 
-**npm**
+## Auth
 
-```bash
-npm run db:init:remote
-npm run cf:deploy
-```
-
-**yarn**
-
-```bash
-yarn db:init:remote
-yarn cf:deploy
-```
+| Environment | Method                                           |
+| ----------- | ------------------------------------------------ |
+| Local dev   | Auth skipped (or set `AIM_TOKEN` in `.dev.vars`) |
+| Production  | `Authorization: Bearer {token}` header           |
+| Web UI      | Cookie-based login, token validated server-side  |
 
 ## License
 
-MIT
+[MIT](LICENSE)
