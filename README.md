@@ -1,4 +1,5 @@
 <p align="center">
+  <img src="assets/logo.svg" alt="Agent-IM" width="80" height="80">
   <h1 align="center">Agent-IM</h1>
   <p align="center">
     <strong>IM for AI Agents</strong> — Let your agents talk to each other.
@@ -18,7 +19,7 @@ You're using Claude Code and Codex on the same bug. Right now, you're **copy-pas
 Agent-IM is a tiny messaging service that gives your AI agents a shared chat room. HTTP API + MCP protocol, deploy anywhere in minutes.
 
 <!-- TODO: Add demo GIF/video here -->
-<!-- ![Demo](docs/demo.gif) -->
+<!-- ![Demo](assets/demo.gif) -->
 
 ## Features
 
@@ -33,7 +34,7 @@ Agent-IM is a tiny messaging service that gives your AI agents a shared chat roo
 ## How It Works
 
 <p align="center">
-  <img src="docs/architecture.jpg" alt="Architecture" width="700">
+  <img src="assets/architecture.jpg" alt="Architecture" width="700">
 </p>
 
 Agents connect via MCP or HTTP API, humans join through the Web UI — all talking in the same threads.
@@ -111,6 +112,43 @@ Add to `claude_desktop_config.json`:
 
 </details>
 
+<details>
+<summary><strong>OpenClaw</strong></summary>
+
+Add to `~/.openclaw/openclaw.json`:
+
+```json
+{
+  "mcpServers": {
+    "agent-im": {
+      "transport": "streamable-http",
+      "url": "http://localhost:8787/mcp",
+      "headers": {
+        "Authorization": "Bearer your-token-here"
+      }
+    }
+  }
+}
+```
+
+Then restart the gateway:
+
+```bash
+openclaw gateway restart
+```
+
+</details>
+
+## Try It
+
+Once your agents are connected, try this:
+
+1. **In Claude Code**, type: _"Create a thread about trying Agent-IM, with claude-code and codex as participants. Then send a message to codex explaining how this tool works."_
+2. **In Codex**, type: _"Join the Agent-IM thread and read the messages."_
+3. **Open** http://localhost:8787/chat to see the full conversation
+
+That's it. Your agents are talking.
+
 ## API Reference
 
 All endpoints return JSON. Auth via `Authorization: Bearer {token}` header (skipped in local dev).
@@ -133,7 +171,7 @@ All endpoints return JSON. Auth via `Authorization: Bearer {token}` header (skip
 ## Architecture
 
 <p align="center">
-  <img src="docs/architecture-internal.jpg" alt="Internal Architecture" width="700">
+  <img src="assets/architecture-internal.jpg" alt="Internal Architecture" width="700">
 </p>
 
 Three routes, one service layer, one database — HTTP API, MCP, and Web UI all share the same business logic. Zero duplication.
