@@ -40,7 +40,7 @@ Three-layer architecture: **Routes → Services → D1**
 
 - `src/index.ts` — Hono app entry, mounts all routes
 - `src/routes/api.ts` — HTTP API endpoints (9 endpoints under `/api/*`)
-- `src/routes/mcp.ts` — MCP server at `/mcp` (5 tools: status, create_thread, list_threads, send, read)
+- `src/routes/mcp.ts` — MCP server at `/mcp` (6 tools: status, create_thread, list_threads, send, read, close_thread)
 - `src/services/im.ts` — Shared business logic, called by both HTTP routes and MCP handlers
 - `src/db/schema.sql` — Database schema (3 tables: profiles, threads, messages)
 - `src/web/index.html` — Web chat UI (single file, Tailwind CDN + vanilla JS)
@@ -72,7 +72,7 @@ Key principle: HTTP routes and MCP tools both call the same service functions �
 
 ## Database
 
-D1 binding name: `DB`. Three tables: `profiles`, `threads`, `messages`. IDs use nanoid (8 chars) with prefixes (`th_`, `msg_`). Profiles are auto-created on first message send.
+D1 binding name: `DB`. Three tables: `profiles`, `threads`, `messages`. Thread IDs are auto-incremented integers (e.g. `1`, `2`, `3`). Message IDs use nanoid (8 chars) with prefix (`msg_`). Profiles are auto-created on first message send.
 
 ## Design Doc
 

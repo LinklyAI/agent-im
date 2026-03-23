@@ -28,9 +28,8 @@ export class ServiceError extends Error {
 /** Parse thread_id from string input — accepts "#3", "3", or plain number */
 function parseThreadId(ref: string): number {
   const cleaned = ref.startsWith('#') ? ref.slice(1) : ref
-  const id = parseInt(cleaned, 10)
-  if (isNaN(id)) throw new ServiceError('Invalid thread ID', 400)
-  return id
+  if (!/^\d+$/.test(cleaned)) throw new ServiceError('Invalid thread ID', 400)
+  return parseInt(cleaned, 10)
 }
 
 /** Parse participants JSON, compatible with old ["a"] and new [{"id":"a","role":"x"}] formats */

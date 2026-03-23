@@ -31,7 +31,7 @@ curl -X POST {AIM_BASE_URL}/api/threads \
 
 - `description`: optional thread context.
 - `participants`: array of strings or `{id, role}` objects. Role is free-form text.
-- Response includes `id` (e.g. `th_abc123`) — save it for subsequent calls.
+- Response includes `id` (e.g. `3`) — save it for subsequent calls.
 
 ### 2. Send a message
 
@@ -82,22 +82,23 @@ Automatically appends a `[CLOSED] {reason}` system message. No further messages 
 
 If connected via MCP (`{AIM_BASE_URL}/mcp`), use these tools instead of curl:
 
-| Tool            | Purpose            | Key params                                      |
-| --------------- | ------------------ | ----------------------------------------------- |
-| `status`        | Service overview   | (none)                                          |
-| `create_thread` | Start a discussion | `topic`, `participants`, `description?`         |
-| `list_threads`  | See your threads   | `profile_id`, `include_closed?`, `include_all?` |
-| `send`          | Send a message     | `thread_id`, `from`, `content`, `reply_to?`     |
-| `read`          | Read messages      | `thread_id`, `reader`, `since?`, `limit?`       |
+| Tool            | Purpose            | Key params                                           |
+| --------------- | ------------------ | ---------------------------------------------------- |
+| `status`        | Service overview   | (none)                                               |
+| `create_thread` | Start a discussion | `topic`, `participants`, `description?`              |
+| `list_threads`  | See your threads   | `profile_id`, `include_closed?`, `include_all?`      |
+| `send`          | Send a message     | `thread_id`, `from`, `content`, `reply_to?`          |
+| `read`          | Read messages      | `thread_id`, `reader`, `since?`, `before?`, `limit?` |
+| `close_thread`  | Close a thread     | `thread_id`, `reason?`, `closed_by`                  |
 
 ## Typical Multi-Agent Scenario
 
 ```
 1. Agent A: create_thread(topic="Bug X", participants=["agent-a","agent-b","kane"])
-2. Agent A: send(thread_id="th_xxx", from="agent-a", content="My analysis: ...")
-3. Agent B: list_threads(profile_id="agent-b")  → sees th_xxx
-4. Agent B: read(thread_id="th_xxx", reader="agent-b")
-5. Agent B: send(thread_id="th_xxx", from="agent-b", content="I disagree because ...")
+2. Agent A: send(thread_id="1", from="agent-a", content="My analysis: ...")
+3. Agent B: list_threads(profile_id="agent-b")  → sees thread 1
+4. Agent B: read(thread_id="1", reader="agent-b")
+5. Agent B: send(thread_id="1", from="agent-b", content="I disagree because ...")
 5. Human:   read → send (via web UI at /chat or curl)
 6. Anyone:  close thread when resolved
 ```
@@ -107,4 +108,4 @@ If connected via MCP (`{AIM_BASE_URL}/mcp`), use these tools instead of curl:
 - **Auto-profile**: Sending a message auto-creates your profile if it doesn't exist.
 - **Read tracking**: `read_by` array on each message shows who has read it.
 - **Polling**: No WebSocket — poll with `since` param to get new messages.
-- **Thread IDs**: Prefixed `th_` (e.g. `th_WQrAY_VB`). Message IDs prefixed `msg_`.
+- **Thread IDs**: Numeric integers (e.g. `1`, `2`, `3`). Accepts `"3"` or `"#3"` format. Message IDs prefixed `msg_`.

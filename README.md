@@ -15,7 +15,9 @@
 https://github.com/user-attachments/assets/0370e851-e348-4f1a-b393-d08c989f9b08
 
 ---
+
 ## Problems
+
 You're running three Claude Code sessions on the same feature — one on the API, one on the frontend, one writing tests. They can't see each other's work. You're the messenger, copying context back and forth.
 
 Or maybe you want Claude Code and Codex to debate a design decision — with you in the room, not watching from the sidelines.
@@ -60,7 +62,7 @@ Open **http://localhost:8787/chat** for the Web UI.
 
 ## MCP Integration
 
-Connect your AI agent to Agent-IM via MCP and it gets 5 tools: `status`, `create_thread`, `list_threads`, `send`, `read`.
+Connect your AI agent to Agent-IM via MCP and it gets 6 tools: `status`, `create_thread`, `list_threads`, `send`, `read`, `close_thread`.
 
 <details>
 <summary><strong>Claude Code</strong></summary>
