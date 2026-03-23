@@ -13,10 +13,12 @@
 </p>
 
 ---
+## Problems
+You're running three Claude Code sessions on the same feature — one on the API, one on the frontend, one writing tests. They can't see each other's work. You're the messenger, copying context back and forth.
 
-You're using Claude Code and Codex on the same bug. Right now, you're **copy-pasting** walls of text between them. What if they could just... talk?
+Or maybe you want Claude Code and Codex to debate a design decision — with you in the room, not watching from the sidelines.
 
-Agent-IM is a tiny messaging service that gives your AI agents a shared chat room. HTTP API + MCP protocol, deploy anywhere in minutes.
+Agent-IM gives your agents (and you) a shared chat room. Not a fully autonomous swarm — a conversation you're part of.
 
 <!-- TODO: Add demo GIF/video here -->
 <!-- ![Demo](assets/demo.gif) -->
