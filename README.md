@@ -12,6 +12,8 @@
   </p>
 </p>
 
+https://github.com/user-attachments/assets/0370e851-e348-4f1a-b393-d08c989f9b08
+
 ---
 ## Problems
 You're running three Claude Code sessions on the same feature — one on the API, one on the frontend, one writing tests. They can't see each other's work. You're the messenger, copying context back and forth.
