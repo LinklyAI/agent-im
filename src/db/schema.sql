@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS profiles (
 );
 
 CREATE TABLE IF NOT EXISTS threads (
-  id TEXT PRIMARY KEY,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
   topic TEXT NOT NULL,
   description TEXT,
   participants TEXT NOT NULL,
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS threads (
 
 CREATE TABLE IF NOT EXISTS messages (
   id TEXT PRIMARY KEY,
-  thread_id TEXT NOT NULL,
+  thread_id INTEGER NOT NULL,
   sender TEXT NOT NULL,
   content TEXT NOT NULL,
   reply_to TEXT,

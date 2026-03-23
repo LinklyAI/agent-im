@@ -316,9 +316,9 @@ function renderThreads(threads) {
     const pIds = participantIds(t.participants)
     const isActive = t.id === currentThreadId
     const isClosed = t.status === 'closed'
-    return `<div class="p-3 mx-2 my-1 rounded-lg cursor-pointer transition-colors ${isActive ? 'bg-border/50' : 'hover:bg-border/30'}" onclick="selectThread('${t.id}')">
+    return `<div class="p-3 mx-2 my-1 rounded-lg cursor-pointer transition-colors ${isActive ? 'bg-border/50' : 'hover:bg-border/30'}" onclick="selectThread(${t.id})">
       <div class="flex items-center justify-between mb-1">
-        <span class="text-sm font-medium truncate">${escapeHtml(t.topic)}</span>
+        <span class="text-sm font-medium truncate"><span class="text-xs text-muted font-mono mr-1.5">#${t.id}</span>${escapeHtml(t.topic)}</span>
         <span class="text-xs ${isClosed ? 'text-red-400' : 'text-accent'}">${t.status}</span>
       </div>
       <div class="flex items-center justify-between">
@@ -401,7 +401,7 @@ window.toggleDetailPanel = toggleDetailPanel
 function renderDetailPanel() {
   const thread = cachedThreads.find(t => t.id === currentThreadId)
   if (!thread) return
-  document.getElementById('detail-topic').textContent = thread.topic
+  document.getElementById('detail-topic').textContent = `#${thread.id} · ${thread.topic}`
   const descEl = document.getElementById('detail-description')
   if (thread.description) { descEl.textContent = thread.description; descEl.classList.remove('hidden') }
   else descEl.classList.add('hidden')
@@ -426,7 +426,7 @@ async function selectThread(id) {
   currentThreadId = id
   expandedMsgIds.clear()
   clearReply()
-  window.location.hash = id
+  window.location.hash = String(id)
   if (currentTab !== 'threads') switchTab('threads')
   if (window.innerWidth < 768) {
     document.getElementById('sidebar').classList.add('max-md:hidden')
@@ -463,7 +463,7 @@ async function loadMessages(forceScroll = false) {
     const thread = cachedThreads.find(t => t.id === currentThreadId)
     if (thread) {
       const pIds = participantIds(thread.participants)
-      document.getElementById('msg-topic').textContent = thread.topic
+      document.getElementById('msg-topic').textContent = `#${thread.id} · ${thread.topic}`
       document.getElementById('msg-participants').textContent = pIds.join(', ')
       const badge = document.getElementById('msg-status-badge')
       badge.textContent = thread.status
@@ -709,9 +709,15 @@ document.getElementById('ct-confirm').onclick = async () => {
 async function pollUpdates() { await Promise.all([loadThreads(), loadMessages()]) }
 
 // --- Init ---
-const initHash = window.location.hash.slice(1)
-if (initHash) { selectThread(initHash) } else { loadThreads() }
-api('GET', '/api/profiles').then(data => { allProfiles = data.profiles || [] }).catch(() => {})
+async function init() {
+  const hash = window.location.hash.slice(1)
+  await loadThreads()
+  if (hash && /^\d+$/.test(hash)) {
+    selectThread(parseInt(hash, 10))
+  }
+  api('GET', '/api/profiles').then(data => { allProfiles = data.profiles || [] }).catch(() => {})
+}
+init()
 </script>
 </body>
 </html>

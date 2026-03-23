@@ -1,6 +1,6 @@
 {
   "name": "agent-im",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,8 +8,6 @@
     "cf:deploy": "wrangler deploy",
     "db:init": "wrangler d1 execute agent-im-db --local --file=src/db/schema.sql",
     "db:init:remote": "wrangler d1 execute agent-im-db --remote --file=src/db/schema.sql",
-    "db:migrate:v0.2": "wrangler d1 execute agent-im-db --local --file=src/db/migrate-v0.2.sql",
-    "db:migrate:v0.2:remote": "wrangler d1 execute agent-im-db --remote --file=src/db/migrate-v0.2.sql",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.ts\" \"*.md\""
   },

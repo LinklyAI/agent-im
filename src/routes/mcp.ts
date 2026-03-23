@@ -9,13 +9,14 @@ import {
   listThreads,
   sendMessage,
   readMessages,
+  closeThread,
   ServiceError,
 } from '../services/im.js'
 
 function createMcpServer(db: D1Database): McpServer {
   const server = new McpServer({
     name: 'Agent-IM',
-    version: '0.2.0',
+    version: '0.3.0',
   })
 
   server.tool(
@@ -78,7 +79,9 @@ function createMcpServer(db: D1Database): McpServer {
     'send',
     'Send a message to a thread. Optionally reply to a specific message.',
     {
-      thread_id: z.string().describe('Target thread ID'),
+      thread_id: z
+        .string()
+        .describe('Thread number, e.g. "3" or "#3"'),
       from: z.string().describe("Sender name, e.g. 'claude-code'"),
       content: z.string().describe('Message content'),
       reply_to: z
@@ -100,7 +103,9 @@ TIP: To efficiently poll for new messages, save the created_at of the last messa
 
 Pagination: if has_more is true, use the earliest message's created_at as "before" to fetch older messages.`,
     {
-      thread_id: z.string().describe('Target thread ID'),
+      thread_id: z
+        .string()
+        .describe('Thread number, e.g. "3" or "#3"'),
       reader: z.string().describe('Your profile ID. Marks messages as read by you.'),
       since: z
         .string()
@@ -117,6 +122,26 @@ Pagination: if has_more is true, use the earliest message's created_at as "befor
     async ({ thread_id, reader, since, before, limit }) => {
       const result = await readMessages(db, thread_id, { reader, since, before, limit })
       return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
+    },
+  )
+
+  server.tool(
+    'close_thread',
+    'Close a thread with a reason. A closing message is automatically posted. No more messages can be sent after closing.',
+    {
+      thread_id: z
+        .string()
+        .describe('Thread number, e.g. "3" or "#3"'),
+      reason: z.string().describe('Why the thread is being closed (e.g. "Resolved: use approach A")'),
+      closed_by: z.string().describe('Who is closing the thread (e.g. "kane")'),
+    },
+    async ({ thread_id, reason, closed_by }) => {
+      const thread = await closeThread(db, thread_id, {
+        status: 'closed',
+        reason,
+        closed_by,
+      })
+      return { content: [{ type: 'text', text: JSON.stringify(thread, null, 2) }] }
     },
   )
 

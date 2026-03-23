@@ -1,4 +1,4 @@
-import { threadId, messageId } from '../lib/id.js'
+import { messageId } from '../lib/id.js'
 import type {
   ProfileRow,
   ThreadRow,
@@ -23,6 +23,14 @@ export class ServiceError extends Error {
   ) {
     super(message)
   }
+}
+
+/** Parse thread_id from string input — accepts "#3", "3", or plain number */
+function parseThreadId(ref: string): number {
+  const cleaned = ref.startsWith('#') ? ref.slice(1) : ref
+  const id = parseInt(cleaned, 10)
+  if (isNaN(id)) throw new ServiceError('Invalid thread ID', 400)
+  return id
 }
 
 /** Parse participants JSON, compatible with old ["a"] and new [{"id":"a","role":"x"}] formats */
@@ -50,7 +58,7 @@ export async function getStatus(db: D1Database): Promise<StatusResponse> {
 
   return {
     name: 'Agent-IM',
-    version: '0.2.0',
+    version: '0.3.0',
     status: 'ok',
     profiles_count: (profiles.results[0] as { count: number }).count,
     threads_count: (threads.results[0] as { count: number }).count,
@@ -115,15 +123,17 @@ export async function createThread(db: D1Database, input: CreateThreadInput): Pr
   if (!input.topic) throw new ServiceError('topic is required', 400)
   if (!input.participants?.length) throw new ServiceError('participants is required', 400)
 
-  const id = threadId()
   const participants = toParticipantEntries(input.participants)
 
-  await db
-    .prepare('INSERT INTO threads (id, topic, description, participants) VALUES (?, ?, ?, ?)')
-    .bind(id, input.topic, input.description ?? null, JSON.stringify(participants))
+  const result = await db
+    .prepare('INSERT INTO threads (topic, description, participants) VALUES (?, ?, ?)')
+    .bind(input.topic, input.description ?? null, JSON.stringify(participants))
     .run()
 
-  const thread = await db.prepare('SELECT * FROM threads WHERE id = ?').bind(id).first<ThreadRow>()
+  const thread = await db
+    .prepare('SELECT * FROM threads WHERE id = ?')
+    .bind(result.meta.last_row_id)
+    .first<ThreadRow>()
   return thread!
 }
 
@@ -157,14 +167,14 @@ export async function listThreads(
         (SELECT MAX(m.created_at) FROM messages m WHERE m.thread_id = t.id) as last_message_at
       FROM threads t
       ${where}
-      ORDER BY t.updated_at DESC`,
+      ORDER BY CASE t.status WHEN 'open' THEN 0 ELSE 1 END, t.updated_at DESC`,
     )
     .bind(...binds)
     .all<ThreadWithStats>()
   return result.results
 }
 
-export async function getThread(db: D1Database, id: string): Promise<ThreadRow | null> {
+export async function getThread(db: D1Database, id: number): Promise<ThreadRow | null> {
   return db.prepare('SELECT * FROM threads WHERE id = ?').bind(id).first<ThreadRow>()
 }
 
@@ -181,13 +191,14 @@ async function ensureProfile(db: D1Database, senderId: string): Promise<void> {
 
 export async function sendMessage(
   db: D1Database,
-  threadIdValue: string,
+  threadRef: string,
   input: SendMessageInput,
 ): Promise<MessageRow> {
   if (!input.from) throw new ServiceError('from is required', 400)
   if (!input.content) throw new ServiceError('content is required', 400)
 
-  const thread = await getThread(db, threadIdValue)
+  const threadId = parseThreadId(threadRef)
+  const thread = await getThread(db, threadId)
   if (!thread) throw new ServiceError('Thread not found', 404)
   if (thread.status !== 'open') throw new ServiceError('Thread is closed', 400)
 
@@ -196,9 +207,9 @@ export async function sendMessage(
     const replyMsg = await db
       .prepare('SELECT id, thread_id FROM messages WHERE id = ?')
       .bind(input.reply_to)
-      .first<{ id: string; thread_id: string }>()
+      .first<{ id: string; thread_id: number }>()
     if (!replyMsg) throw new ServiceError('Reply target message not found', 404)
-    if (replyMsg.thread_id !== threadIdValue)
+    if (replyMsg.thread_id !== threadId)
       throw new ServiceError('Reply target must be in the same thread', 400)
   }
 
@@ -212,8 +223,8 @@ export async function sendMessage(
       .prepare(
         'INSERT INTO messages (id, thread_id, sender, content, reply_to, read_by) VALUES (?, ?, ?, ?, ?, ?)',
       )
-      .bind(id, threadIdValue, input.from, input.content, input.reply_to ?? null, readBy),
-    db.prepare("UPDATE threads SET updated_at = datetime('now') WHERE id = ?").bind(threadIdValue),
+      .bind(id, threadId, input.from, input.content, input.reply_to ?? null, readBy),
+    db.prepare("UPDATE threads SET updated_at = datetime('now') WHERE id = ?").bind(threadId),
   ])
 
   const message = await db
@@ -225,17 +236,18 @@ export async function sendMessage(
 
 export async function readMessages(
   db: D1Database,
-  threadIdValue: string,
+  threadRef: string,
   query: ReadMessagesQuery,
 ): Promise<MessagesResponse> {
-  const thread = await getThread(db, threadIdValue)
+  const threadId = parseThreadId(threadRef)
+  const thread = await getThread(db, threadId)
   if (!thread) throw new ServiceError('Thread not found', 404)
 
   const limit = Math.min(Math.max(query.limit ?? 5, 1), 50)
 
   // Build query conditions
   const conditions: string[] = ['thread_id = ?']
-  const binds: (string | number)[] = [threadIdValue]
+  const binds: (string | number)[] = [threadId]
 
   if (query.since) {
     conditions.push('created_at > ?')
@@ -293,7 +305,7 @@ export async function readMessages(
   }
 
   return {
-    thread_id: threadIdValue,
+    thread_id: threadId,
     messages,
     has_more: totalCount > limit,
     remaining_count: Math.max(totalCount - limit, 0),
@@ -302,10 +314,11 @@ export async function readMessages(
 
 export async function closeThread(
   db: D1Database,
-  threadIdValue: string,
+  threadRef: string,
   input: CloseThreadInput,
 ): Promise<ThreadRow> {
-  const thread = await getThread(db, threadIdValue)
+  const threadId = parseThreadId(threadRef)
+  const thread = await getThread(db, threadId)
   if (!thread) throw new ServiceError('Thread not found', 404)
   if (thread.status === 'closed') throw new ServiceError('Thread is already closed', 400)
 
@@ -319,14 +332,14 @@ export async function closeThread(
   await db.batch([
     db
       .prepare("UPDATE threads SET status = 'closed', updated_at = datetime('now') WHERE id = ?")
-      .bind(threadIdValue),
+      .bind(threadId),
     db
       .prepare(
         'INSERT INTO messages (id, thread_id, sender, content, read_by) VALUES (?, ?, ?, ?, ?)',
       )
       .bind(
         closeMsgId,
-        threadIdValue,
+        threadId,
         input.closed_by,
         closeMsgContent,
         JSON.stringify([input.closed_by]),
@@ -335,7 +348,7 @@ export async function closeThread(
 
   const updated = await db
     .prepare('SELECT * FROM threads WHERE id = ?')
-    .bind(threadIdValue)
+    .bind(threadId)
     .first<ThreadRow>()
   return updated!
 }

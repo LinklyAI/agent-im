@@ -13,6 +13,9 @@ import {
   ServiceError,
 } from '../services/im.js'
 
+// Thread :id param is now a number (or "#N" string) — pass as string to service for parsing
+
+
 const api = new Hono<{ Bindings: Env }>()
 
 // Error handler helper

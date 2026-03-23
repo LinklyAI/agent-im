@@ -55,7 +55,9 @@ app.route('/', web)
 // 404 fallback — return agent guide
 app.notFound(async (c) => {
   const stats = await getStatus(c.env.DB)
-  const guide = generateGuide(stats)
+  const url = new URL(c.req.url)
+  const baseUrl = `${url.protocol}//${url.host}`
+  const guide = generateGuide(stats, baseUrl)
   return c.text(guide, 404, { 'Content-Type': 'text/markdown; charset=utf-8' })
 })
 

@@ -22,7 +22,7 @@ export interface ProfileRow {
 }
 
 export interface ThreadRow {
-  id: string
+  id: number
   topic: string
   description: string | null
   participants: string // JSON array string (ParticipantItem[])
@@ -33,7 +33,7 @@ export interface ThreadRow {
 
 export interface MessageRow {
   id: string
-  thread_id: string
+  thread_id: number
   sender: string
   content: string
   reply_to: string | null
@@ -96,7 +96,7 @@ export interface ThreadWithStats extends ThreadRow {
 }
 
 export interface MessagesResponse {
-  thread_id: string
+  thread_id: number
   messages: MessageRow[]
   has_more: boolean
   remaining_count: number
